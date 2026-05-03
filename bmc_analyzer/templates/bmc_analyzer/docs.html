@@ -1,0 +1,537 @@
+{% extends 'bmc_analyzer/base.html' %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4 gap-3">
+    <h1 class="mb-0"><i class="bi bi-file-earmark-text-fill text-primary me-2"></i>Документация по сопровождению</h1>
+    <span class="badge bg-success fs-6">v2.0.0 — HTTP&rarr;HTTPS</span>
+</div>
+<p class="lead text-muted mb-4">
+    Стратегия сопровождения BMC_analyzer согласно <strong>ГОСТ 12207</strong>, <strong>ГОСТ Р 56920</strong> и <strong>IEEE 829</strong>.
+    Переход с незашифрованного HTTP (эпоха 2000-х) на защищённый протокол HTTPS.
+</p>
+
+<!-- Навигация по разделам -->
+<ul class="nav nav-tabs mb-4" id="docsTabs" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#task1"><i class="bi bi-1-circle me-1"></i>Стратегия</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#task2"><i class="bi bi-2-circle me-1"></i>Изменения</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#task3"><i class="bi bi-3-circle me-1"></i>ЕСПД</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#task4"><i class="bi bi-4-circle me-1"></i>Контейнер</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#task5"><i class="bi bi-5-circle me-1"></i>Тесты</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#task6"><i class="bi bi-6-circle me-1"></i>Развёртывание</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#task7"><i class="bi bi-7-circle me-1"></i>Оповещение</button></li>
+</ul>
+
+<div class="tab-content">
+
+<!-- ЗАДАНИЕ 1: Стратегия сопровождения -->
+<div class="tab-pane fade show active" id="task1">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <strong>Задание 1. Стратегия сопровождения (ГОСТ 12207, процесс 6.4)</strong>
+        </div>
+        <div class="card-body">
+            <h5>1.1 Цель сопровождения</h5>
+            <p>Обеспечить управление модификацией и перемещением программных продуктов (приложение BMC_analyzer и его контейнер) путём перехода с незашифрованного протокола HTTP на защищённый HTTPS на всех сайтах Компании 1.</p>
+
+            <h5 class="mt-3">1.2 Стратегия выпусков</h5>
+            <p>Согласно статистике вендоров за 2025 год, стратегия предусматривает:</p>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr><th>Компонент</th><th>Версия до</th><th>Версия после</th><th>Основание</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Python</td><td>3.10</td><td>3.10 (LTS, стабильная)</td><td>Статистика PyPI 2025</td></tr>
+                        <tr><td>Django</td><td>5.0</td><td>5.1 (LTS)</td><td>Django Security Releases 2025</td></tr>
+                        <tr><td>Nginx/proxy</td><td>—</td><td>1.26 (stable)</td><td>Nginx changelog Q4 2025</td></tr>
+                        <tr><td>TLS</td><td>Отсутствует</td><td>TLS 1.3 (RFC 8446)</td><td>IETF, Let's Encrypt статистика 2025</td></tr>
+                        <tr><td>Контейнер (Docker)</td><td>—</td><td>python:3.10-slim</td><td>Docker Hub pulls 2025</td></tr>
+                        <tr><td>Bootstrap</td><td>5.3.0</td><td>5.3.0 (актуальная)</td><td>GitHub releases 2025</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h5 class="mt-3">1.3 Этапы сопровождения (ГОСТ 12207, §6.4.3)</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr><th>Этап</th><th>Наименование</th><th>Срок</th><th>Исполнитель</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>М-01</td><td>Анализ запроса на модификацию (MR-2026-001)</td><td>Нед. 1</td><td>Компания 2 (архитектор)</td></tr>
+                        <tr><td>М-02</td><td>Разработка ТЗ на изменение</td><td>Нед. 1–2</td><td>Компания 2 (аналитик)</td></tr>
+                        <tr><td>М-03</td><td>Реализация: middleware HTTPS + заголовки безопасности</td><td>Нед. 2–3</td><td>Компания 2 (разработчик)</td></tr>
+                        <tr><td>М-04</td><td>Сборка модифицированного контейнера</td><td>Нед. 3</td><td>Компания 2 (DevOps)</td></tr>
+                        <tr><td>М-05</td><td>Тестирование по ГОСТ Р 56920 / IEEE 829</td><td>Нед. 3–4</td><td>Компания 2 (QA)</td></tr>
+                        <tr><td>М-06</td><td>Передача в среду заказчика (Компания 1)</td><td>Нед. 4</td><td>Компания 2 + Компания 1 (ИТ)</td></tr>
+                        <tr><td>М-07</td><td>Оповещение затронутых сторон</td><td>Нед. 4</td><td>Компания 2 (PM)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h5 class="mt-3">1.4 Запрос на модификацию MR-2026-001</h5>
+            <div class="bg-light p-3 rounded border">
+                <p class="mb-1"><strong>Идентификатор:</strong> MR-2026-001</p>
+                <p class="mb-1"><strong>Тип:</strong> Адаптивное сопровождение (Adaptive Maintenance)</p>
+                <p class="mb-1"><strong>Приоритет:</strong> Высокий (безопасность)</p>
+                <p class="mb-1"><strong>Инициатор:</strong> Руководство Компании 1</p>
+                <p class="mb-1"><strong>Описание:</strong> Переход с HTTP на HTTPS на всех сайтах. Протокол HTTP устарел и не обеспечивает конфиденциальность и целостность передаваемых данных.</p>
+                <p class="mb-0"><strong>Статус:</strong> <span class="badge bg-success">Выполнено (v2.0.0)</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ЗАДАНИЕ 2: Изменения в системе -->
+<div class="tab-pane fade" id="task2">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning text-dark">
+            <strong>Задание 2. Изменения в архитектуре, операциях и интерфейсах</strong>
+        </div>
+        <div class="card-body">
+            <h5>2.1 Изменения в архитектуре</h5>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">До изменения (v1.x — HTTP)</div>
+                        <div class="card-body font-monospace small">
+                            Браузер → HTTP (80) → Django (runserver)<br>
+                            ─────────────────────────────────────<br>
+                            • Нет шифрования<br>
+                            • Нет HSTS<br>
+                            • Нет заголовков безопасности<br>
+                            • Сборка на старой Linux VM (EOL)<br>
+                            • Нет контейнеризации
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">После изменения (v2.0 — HTTPS)</div>
+                        <div class="card-body font-monospace small">
+                            Браузер → HTTPS (443) → Proxy/TLS → Django<br>
+                            ─────────────────────────────────────────────<br>
+                            • TLS 1.3 (RFC 8446)<br>
+                            • HSTS (max-age=31536000)<br>
+                            • CSP, X-Frame, nosniff и др.<br>
+                            • Сборка в Docker-контейнере<br>
+                            • HttpsRedirectMiddleware (301)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="mt-3">2.2 Изменения в операциях (middleware)</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr><th>Компонент</th><th>Изменение</th><th>Файл</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>HttpsRedirectMiddleware</td><td><span class="badge bg-success">Добавлен</span> — редирект HTTP→HTTPS (301)</td><td>bmc_analyzer/middleware.py</td></tr>
+                        <tr><td>SecurityHeadersMiddleware</td><td><span class="badge bg-success">Добавлен</span> — HSTS, CSP, X-Frame-Options и др.</td><td>bmc_analyzer/middleware.py</td></tr>
+                        <tr><td>settings.py</td><td><span class="badge bg-primary">Обновлён</span> — SECURE_* параметры, SESSION_COOKIE_SECURE</td><td>django_project/settings.py</td></tr>
+                        <tr><td>/api/security-status/</td><td><span class="badge bg-success">Добавлен</span> — эндпоинт проверки протокола</td><td>bmc_analyzer/views.py</td></tr>
+                        <tr><td>/docs/</td><td><span class="badge bg-success">Добавлен</span> — страница документации</td><td>bmc_analyzer/views.py</td></tr>
+                        <tr><td>Dockerfile</td><td><span class="badge bg-success">Создан</span> — контейнер для SaaS-развёртывания</td><td>Dockerfile</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h5 class="mt-3">2.3 Изменения в интерфейсах</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr><th>Интерфейс</th><th>До</th><th>После</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>URL схема</td><td>http://</td><td>https:// (редирект 301 при попытке HTTP)</td></tr>
+                        <tr><td>Порт</td><td>80 (HTTP)</td><td>443 (HTTPS) + 80→443 редирект</td></tr>
+                        <tr><td>Cookie</td><td>Небезопасные (Secure=False)</td><td>Secure=True, HttpOnly=True, SameSite=Lax</td></tr>
+                        <tr><td>Заголовки ответа</td><td>Базовые Django</td><td>+ HSTS, CSP, X-Frame-Options, nosniff</td></tr>
+                        <tr><td>Навигация</td><td>Без ссылки на документацию</td><td>Кнопка «Документация» в navbar</td></tr>
+                        <tr><td>API</td><td>Нет</td><td>GET /api/security-status/ (JSON)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ЗАДАНИЕ 3: Документация ЕСПД -->
+<div class="tab-pane fade" id="task3">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+            <strong>Задание 3. Документация по ЕСПД (ГОСТ 19.xxx)</strong>
+        </div>
+        <div class="card-body">
+            <p>Обновлению подлежат следующие эксплуатационные документы согласно ЕСПД:</p>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr><th>Документ</th><th>ГОСТ</th><th>Изменения</th><th>Версия</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Руководство оператора</strong></td>
+                            <td>ГОСТ 19.505-79</td>
+                            <td>Обновлены URL (http→https), добавлено описание автоматического редиректа, обновлены скриншоты браузера с иконкой замка</td>
+                            <td>v2.0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Руководство программиста</strong></td>
+                            <td>ГОСТ 19.504-79</td>
+                            <td>Добавлено описание HttpsRedirectMiddleware и SecurityHeadersMiddleware, переменных окружения DJANGO_SECRET_KEY, инструкции по Dockerfile</td>
+                            <td>v2.0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Описание программы</strong></td>
+                            <td>ГОСТ 19.402-78</td>
+                            <td>Обновлена архитектурная схема (добавлен TLS-прокси), обновлён список компонент (middleware), изменены сведения о функционировании</td>
+                            <td>v2.0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Программа и методика испытаний</strong></td>
+                            <td>ГОСТ 19.301-79</td>
+                            <td>Добавлены тест-кейсы TC-HTTPS-01…TC-HTTPS-06 по переходу на HTTPS, тест безопасных заголовков, тест HSTS</td>
+                            <td>v2.0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ведомость держателей подлинников</strong></td>
+                            <td>ГОСТ 19.502-78</td>
+                            <td>Добавлены Dockerfile, middleware.py</td>
+                            <td>v2.0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h5 class="mt-3">3.1 Лист регистрации изменений (ЛРИ)</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr><th>Изм.</th><th>Листов</th><th>Описание</th><th>Дата</th><th>Подпись</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td>Все</td><td>Переход HTTP→HTTPS, добавление middleware, Dockerfile, API-эндпоинта, страницы документации</td><td>03.05.2026</td><td>Компания 2</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h5 class="mt-3">3.2 Аннотация изменений (для Руководства оператора)</h5>
+            <div class="bg-light border rounded p-3">
+                <p class="mb-1"><strong>Версия 2.0.0</strong> от 03.05.2026</p>
+                <p class="mb-1">В связи с требованиями информационной безопасности система BMC_analyzer переведена на защищённый протокол HTTPS. При обращении по адресу <code>http://</code> браузер автоматически перенаправляется на <code>https://</code> (HTTP 301). Все страницы отдаются с заголовками безопасности: HSTS, CSP, X-Frame-Options, X-Content-Type-Options. Cookie сессии защищены флагами Secure и HttpOnly. Добавлена страница документации по сопровождению (<code>/docs/</code>) и API-эндпоинт проверки безопасности (<code>/api/security-status/</code>).</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ЗАДАНИЕ 4: Контейнер (Dockerfile) -->
+<div class="tab-pane fade" id="task4">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white">
+            <strong>Задание 4. Модифицированный программный продукт (контейнер) — Dockerfile</strong>
+        </div>
+        <div class="card-body">
+            <p>Поскольку исходная виртуальная машина Linux (2000-е годы) уже не функционирует, сборка и развёртывание приложения выполняются через Docker-контейнер.</p>
+
+            <h5>4.1 Dockerfile</h5>
+            <pre class="bg-dark text-light p-3 rounded"><code>FROM python:3.10-slim
+
+LABEL maintainer="company2-dev@example.com"
+LABEL version="2.0.0"
+LABEL description="BMC_analyzer — переход HTTP→HTTPS (MR-2026-001)"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DJANGO_SETTINGS_MODULE=django_project.settings \
+    DEBUG=False
+
+WORKDIR /app
+
+# Системные зависимости
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc libpq-dev curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python-зависимости
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Исходный код
+COPY . .
+
+# Статика и миграции
+RUN python manage.py collectstatic --noinput
+RUN python manage.py migrate --noinput
+
+# Порт приложения
+EXPOSE 3000
+
+# Проверка работоспособности
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:3000/login/ || exit 1
+
+# Запуск через Gunicorn (WSGI)
+CMD ["gunicorn", \
+     "--bind", "0.0.0.0:3000", \
+     "--workers", "2", \
+     "--timeout", "60", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "django_project.wsgi:application"]</code></pre>
+
+            <h5 class="mt-3">4.2 Развёртывание в Replit SaaS</h5>
+            <p>В среде Replit TLS-терминация выполняется на уровне прокси-сервера платформы, что обеспечивает HTTPS для всех входящих соединений. Приложение запускается на порту 3000 и принимает запросы через <code>X-Forwarded-Proto: https</code>.</p>
+
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong>Текущий статус:</strong> Приложение работает на Replit SaaS под защитой HTTPS. Middleware <code>HttpsRedirectMiddleware</code> проверяет заголовок <code>X-Forwarded-Proto</code> и выполняет редирект при HTTP-запросах. Заголовки безопасности устанавливает <code>SecurityHeadersMiddleware</code>.
+            </div>
+
+            <h5 class="mt-3">4.3 Проверка статуса безопасности (API)</h5>
+            <p>Эндпоинт <code>GET /api/security-status/</code> возвращает JSON с информацией о протоколе:</p>
+            <pre class="bg-light border rounded p-3"><code>{
+  "protocol": "HTTPS",
+  "is_secure": true,
+  "version": "2.0.0",
+  "hsts_enabled": true,
+  "security_headers": [
+    "Strict-Transport-Security",
+    "X-Content-Type-Options",
+    "X-Frame-Options",
+    "X-XSS-Protection",
+    "Referrer-Policy",
+    "Permissions-Policy",
+    "Content-Security-Policy"
+  ]
+}</code></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ЗАДАНИЕ 5: Тесты -->
+<div class="tab-pane fade" id="task5">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <strong>Задание 5. Тесты по ГОСТ Р 56920 и IEEE 829</strong>
+        </div>
+        <div class="card-body">
+            <h5>5.1 Описание набора тестов (Test Suite, IEEE 829)</h5>
+            <div class="table-responsive mb-3">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr><th>TS ID</th><th>Наименование</th><th>Тип (ГОСТ Р 56920)</th><th>Покрытие</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>TS-BMC-01</td><td>Проверка бизнес-логики (расчёт рисков)</td><td>Функциональное</td><td>utils.py::calculate_risks</td></tr>
+                        <tr><td>TS-BMC-02</td><td>Проверка HTTPS-перехода</td><td>Безопасность</td><td>middleware.py::HttpsRedirectMiddleware</td></tr>
+                        <tr><td>TS-BMC-03</td><td>Проверка заголовков безопасности</td><td>Безопасность</td><td>middleware.py::SecurityHeadersMiddleware</td></tr>
+                        <tr><td>TS-BMC-04</td><td>Проверка доступа (авторизация)</td><td>Функциональное</td><td>views.py</td></tr>
+                        <tr><td>TS-BMC-05</td><td>Проверка API security-status</td><td>Интеграционное</td><td>views.py::security_status</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h5>5.2 Тест-кейсы (IEEE 829, Test Case Specification)</h5>
+            <div class="accordion" id="testcasesAccordion">
+                {% for tc in "123456"|make_list %}
+                {% endfor %}
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#tc1">TC-HTTPS-01: Редирект HTTP→HTTPS</button></h2>
+                    <div id="tc1" class="accordion-collapse collapse show">
+                        <div class="accordion-body">
+                            <p><strong>Предусловия:</strong> Сервер запущен. Запрос отправляется с заголовком <code>X-Forwarded-Proto: http</code>.</p>
+                            <p><strong>Шаги:</strong> Выполнить GET-запрос к корневому URL с HTTP-заголовком.</p>
+                            <p><strong>Ожидаемый результат:</strong> Ответ HTTP 301, заголовок <code>Location</code> начинается с <code>https://</code>.</p>
+                            <p><strong>Тип:</strong> Безопасность (ГОСТ Р 56920 §7.4)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#tc2">TC-HTTPS-02: Заголовок HSTS</button></h2>
+                    <div id="tc2" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <p><strong>Предусловия:</strong> Пользователь авторизован.</p>
+                            <p><strong>Шаги:</strong> Выполнить GET-запрос к главной странице.</p>
+                            <p><strong>Ожидаемый результат:</strong> В ответе присутствует заголовок <code>Strict-Transport-Security</code> со значением <code>max-age=31536000; includeSubDomains; preload</code>.</p>
+                            <p><strong>Тип:</strong> Безопасность (ГОСТ Р 56920 §7.4)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#tc3">TC-HTTPS-03: Заголовки X-Content-Type-Options и X-Frame-Options</button></h2>
+                    <div id="tc3" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <p><strong>Предусловия:</strong> Пользователь авторизован.</p>
+                            <p><strong>Шаги:</strong> Выполнить GET-запрос к главной странице.</p>
+                            <p><strong>Ожидаемый результат:</strong> <code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: SAMEORIGIN</code>.</p>
+                            <p><strong>Тип:</strong> Безопасность (ГОСТ Р 56920 §7.4)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#tc4">TC-HTTPS-04: API /api/security-status/ возвращает HTTPS</button></h2>
+                    <div id="tc4" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <p><strong>Предусловия:</strong> Пользователь авторизован.</p>
+                            <p><strong>Шаги:</strong> GET /api/security-status/ с заголовком <code>X-Forwarded-Proto: https</code>.</p>
+                            <p><strong>Ожидаемый результат:</strong> JSON <code>{"protocol": "HTTPS", "is_secure": true}</code>.</p>
+                            <p><strong>Тип:</strong> Интеграционное (ГОСТ Р 56920 §7.5)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#tc5">TC-BMC-01: Расчёт риска (F=2, C=0.9)</button></h2>
+                    <div id="tc5" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <p><strong>Предусловия:</strong> В БД создана команда с F=2, C=0.9.</p>
+                            <p><strong>Шаги:</strong> Вызов <code>calculate_risks()</code>.</p>
+                            <p><strong>Ожидаемый результат:</strong> risk_orig[0] ≈ 1.8, risk_enh[0] ≈ 2.16.</p>
+                            <p><strong>Тип:</strong> Функциональное (ГОСТ Р 56920 §7.3)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#tc6">TC-BMC-02: Доступ к /docs/ без авторизации</button></h2>
+                    <div id="tc6" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <p><strong>Предусловия:</strong> Пользователь не авторизован.</p>
+                            <p><strong>Шаги:</strong> GET /docs/.</p>
+                            <p><strong>Ожидаемый результат:</strong> Редирект на /login/ (HTTP 302).</p>
+                            <p><strong>Тип:</strong> Функциональное / Безопасность (ГОСТ Р 56920 §7.3)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="mt-4">5.3 Местонахождение тестового кода</h5>
+            <p>Файл: <code>bmc_analyzer/tests.py</code> — классы <code>TestCalculateRisks</code>, <code>TestHttpsMiddleware</code>, <code>TestSecurityHeaders</code>, <code>TestSecurityStatusAPI</code>, <code>TestAccessControl</code>.</p>
+        </div>
+    </div>
+</div>
+
+<!-- ЗАДАНИЕ 6: Развёртывание -->
+<div class="tab-pane fade" id="task6">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white">
+            <strong>Задание 6. Порядок помещения обновлённых продуктов в среду заказчика</strong>
+        </div>
+        <div class="card-body">
+            <h5>6.1 Схема передачи (CI/CD)</h5>
+            <pre class="bg-light border rounded p-3 small">
+Компания 2 (разработчик)          Реестр образов         Компания 1 (заказчик)
+────────────────────────────      ────────────────────   ──────────────────────────────
+Разработка (Replit / git)  ──►   docker push registry  ──►  docker pull + run
+   ↓                                                          ↓
+Тесты (pytest, ГОСТ Р 56920) ──► Пройдены                 Миграции БД
+   ↓                                                          ↓
+Сборка Dockerfile          ──►   Образ v2.0.0             Restart Nginx / proxy
+   ↓                                                          ↓
+Тег релиза v2.0.0 в git    ──►   Документация             Smoke-тест (curl -I https://...)
+            </pre>
+
+            <h5 class="mt-3">6.2 Пошаговые инструкции для ИТ-отдела Компании 1</h5>
+            <ol>
+                <li>Получить Docker-образ: <code>docker pull company2-registry/bmc_analyzer:2.0.0</code></li>
+                <li>Остановить предыдущую версию: <code>docker stop bmc_analyzer_v1</code></li>
+                <li>Запустить новую версию:
+                    <pre class="bg-dark text-light p-2 rounded mt-1 mb-1 small">docker run -d --name bmc_analyzer_v2 \
+  -p 3000:3000 \
+  -e DJANGO_SECRET_KEY="&lt;secret&gt;" \
+  -e REPLIT_DOMAINS="yourdomain.com" \
+  -v ./db.sqlite3:/app/db.sqlite3 \
+  company2-registry/bmc_analyzer:2.0.0</pre>
+                </li>
+                <li>Применить миграции БД (если не запустились автоматически):
+                    <code>docker exec bmc_analyzer_v2 python manage.py migrate</code></li>
+                <li>Обновить конфигурацию Nginx/прокси: добавить редирект <code>80 → 443</code> и SSL-сертификат (Let's Encrypt / корпоративный CA).</li>
+                <li>Выполнить smoke-тест: <code>curl -I https://yourdomain.com/login/</code> → ожидается <code>HTTP/2 200</code> + заголовок <code>Strict-Transport-Security</code>.</li>
+                <li>Проверить API: <code>curl https://yourdomain.com/api/security-status/</code> → <code>{"protocol":"HTTPS","is_secure":true}</code>.</li>
+            </ol>
+
+            <h5 class="mt-3">6.3 Критерии приёмки</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr><th>Критерий</th><th>Проверка</th><th>Результат</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>HTTP→HTTPS редирект</td><td><code>curl -I http://...</code></td><td>301 Moved Permanently + Location: https://</td></tr>
+                        <tr><td>HSTS активен</td><td><code>curl -I https://...</code></td><td>Strict-Transport-Security в заголовках</td></tr>
+                        <tr><td>Приложение доступно</td><td>Браузер → https://</td><td>Страница входа, иконка замка</td></tr>
+                        <tr><td>Данные не потеряны</td><td>Вход + просмотр таблиц</td><td>Все команды BMC отображаются корректно</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ЗАДАНИЕ 7: Оповещение -->
+<div class="tab-pane fade" id="task7">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-danger text-white">
+            <strong>Задание 7. Доведение сведений о модификации до всех затронутых сторон</strong>
+        </div>
+        <div class="card-body">
+            <h5>7.1 Затронутые стороны (Stakeholders)</h5>
+            <div class="table-responsive mb-3">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr><th>Сторона</th><th>Роль</th><th>Затронутые изменения</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Руководство Компании 1</td><td>Заказчик, инициатор</td><td>Итоги выполнения MR-2026-001, статус перехода на HTTPS</td></tr>
+                        <tr><td>ИТ-отдел Компании 1</td><td>Эксплуатация</td><td>Новый Dockerfile, инструкция по развёртыванию, конфигурация Nginx</td></tr>
+                        <tr><td>Пользователи системы</td><td>Конечные пользователи</td><td>Новый URL (https://), сообщение об обновлении</td></tr>
+                        <tr><td>Служба ИБ Компании 1</td><td>Аудит безопасности</td><td>Список заголовков безопасности, TLS-конфигурация, HSTS-политика</td></tr>
+                        <tr><td>Разработчики Компании 2</td><td>Сопровождение</td><td>Изменения в middleware, settings, тестах, Dockerfile</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h5>7.2 Матрица коммуникаций (MR-2026-001)</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr><th>Сторона</th><th>Канал</th><th>Форма сообщения</th><th>Срок</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Руководство Компании 1</td><td>Официальное письмо</td><td>Отчёт о выполнении MR-2026-001 (PDF)</td><td>До ввода в эксплуатацию</td></tr>
+                        <tr><td>ИТ-отдел Компании 1</td><td>Техническая документация</td><td>Инструкция по развёртыванию v2.0.0 + Dockerfile</td><td>За 3 дня до развёртывания</td></tr>
+                        <tr><td>Пользователи</td><td>Email-рассылка</td><td>Уведомление об обновлении: «Система переведена на HTTPS»</td><td>В день развёртывания</td></tr>
+                        <tr><td>Служба ИБ</td><td>Технический отчёт</td><td>Перечень заголовков безопасности, TLS-политика, HSTS</td><td>За 1 день до развёртывания</td></tr>
+                        <tr><td>Разработчики Компании 2</td><td>Git (CHANGELOG, тег v2.0.0)</td><td>Коммит с описанием изменений + Release Notes</td><td>При слиянии ветки</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h5 class="mt-3">7.3 Шаблон Release Notes (v2.0.0)</h5>
+            <div class="bg-light border rounded p-3">
+                <p class="mb-1 fw-bold">BMC_analyzer Release Notes — версия 2.0.0 (03.05.2026)</p>
+                <p class="mb-1"><strong>Изменение:</strong> MR-2026-001 — переход HTTP → HTTPS</p>
+                <ul class="mb-1">
+                    <li>Все HTTP-запросы автоматически перенаправляются на HTTPS (301 Redirect).</li>
+                    <li>Добавлены заголовки безопасности: HSTS, CSP, X-Frame-Options, X-Content-Type-Options.</li>
+                    <li>Cookie сессии защищены (Secure, HttpOnly, SameSite=Lax).</li>
+                    <li>Добавлен API-эндпоинт <code>/api/security-status/</code> для мониторинга.</li>
+                    <li>Добавлена страница документации <code>/docs/</code>.</li>
+                    <li>Приложение упаковано в Docker-контейнер (python:3.10-slim).</li>
+                </ul>
+                <p class="mb-1"><strong>Требуемые действия ИТ-отдела:</strong> Обновить конфигурацию прокси, добавить SSL-сертификат, обновить Docker-образ до v2.0.0.</p>
+                <p class="mb-0"><strong>Обратная совместимость:</strong> Все существующие данные БД сохраняются. Пользователи перенаправляются автоматически.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div><!-- /tab-content -->
+{% endblock %}

@@ -1,0 +1,6 @@
+Django>=5.0,<6.0
+sympy>=1.12
+pandas>=2.0
+matplotlib>=3.7
+pytest-django>=4.7
+gunicorn>=21.2

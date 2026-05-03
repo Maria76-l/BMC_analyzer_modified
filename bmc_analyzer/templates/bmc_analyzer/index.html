@@ -1,0 +1,131 @@
+<!-- Шаблон для страницы анализа BMC-команд. Расширяет базовый шаблон bmc_analyzer/base.html -->
+{% extends 'bmc_analyzer/base.html' %}
+
+{% block content %}
+<h1 class="mb-4">Анализ команд удалённого управления BMC</h1>
+
+<!-- Вкладки для переключения между разными представлениями данных -->
+<ul class="nav nav-tabs" id="riskTab" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#original">📊 Исходный индекс угрозы</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#enhanced">⚠️ Усиленный индекс угрозы</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#charts">📈 Графики сравнения</button>
+    </li>
+</ul>
+<!-- Содержимое вкладок -->
+<div class="tab-content mt-4">
+    <!-- Вкладка с исходным индексом угрозы -->
+    <div class="tab-pane fade show active" id="original">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <strong>Исходный индекс угрозы</strong>
+                <span class="badge bg-secondary ms-2">R = C × F</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <!-- Таблица с данными о командах и их индексе угрозы -->
+                    <table class="table table-bordered table-striped align-middle mb-0">
+                        <thead class="table-light text-center">
+                            <tr>
+                                <th>№</th>
+                                <th>Команда</th>
+                                <th>Частота (F)</th>
+                                <th>Критичность (C)</th>
+                                <th>Индекс угрозы (R)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in table_original_rows %}
+                            <tr class="text-center">
+                                <td>{{ forloop.counter }}</td>
+                                <td class="text-start">{{ item.command }}</td>
+                                <td>{{ item.frequency }}</td>
+                                <td>{{ item.criticality }}</td>
+                                <td class="fw-bold">{{ item.risk }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- Графики в виде гистограммы и круговой диаграммы -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white">Гистограмма индекса угрозы</div>
+                    <div class="card-body text-center">
+                        <!-- Отображение гистограммы в формате base64 -->
+                        <img src="data:image/png;base64,{{ bar_chart }}" class="img-fluid">
+                        <div class="mt-2 small text-muted">
+                            <span style="background:#28a745; display:inline-block; width:12px; height:12px;"></span> ≤1.0 (низкий)
+                            <span style="background:#ffc107; display:inline-block; width:12px; height:12px; margin-left:10px;"></span> 1.0–2.0 (средний)
+                            <span style="background:#dc3545; display:inline-block; width:12px; height:12px; margin-left:10px;"></span> >2.0 (высокий)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white">Вклад команд в общий индекс угрозы</div>
+                    <div class="card-body text-center">
+                        <img src="data:image/png;base64,{{ pie_chart }}" class="img-fluid">
+                        <div class="mt-2 small text-muted">* Доля каждой команды в суммарном индексе угрозы</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<!-- Вкладка с усиленным индексом угрозы -->
+    <div class="tab-pane fade" id="enhanced">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <strong>Усиленный индекс угрозы</strong>
+                <span class="badge bg-warning ms-2">критичность опасных команд ×1.2</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle mb-0">
+                        <thead class="table-light text-center">
+                            <tr>
+                                <th>№</th>
+                                <th>Команда</th>
+                                <th>Частота (F)</th>
+                                <th>Критичность (усиленная)</th>
+                                <th>Индекс угрозы (усиленный)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in table_enhanced_rows %}
+                            <tr class="text-center">
+                                <td>{{ forloop.counter }}</td>
+                                <td class="text-start">{{ item.command }}</td>
+                                <td>{{ item.frequency }}</td>
+                                <td>{{ item.criticality_enh }}</td>
+                                <td class="fw-bold">{{ item.risk_enh }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+<!-- Вкладка с графиками сравнения индексов угрозы -->
+    <div class="tab-pane fade" id="charts">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">Сравнение исходного и усиленного индекса угрозы</div>
+            <div class="card-body text-center">
+                <img src="data:image/png;base64,{{ line_chart }}" class="img-fluid">
+                <div class="mt-2 small text-muted">Синий — исходный, оранжевый — усиленный (для команд с критичностью >0.5)</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!--Гринина А.В.: реплика открылась с первого раза, работает корректно-->

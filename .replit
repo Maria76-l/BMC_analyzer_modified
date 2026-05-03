@@ -16,4 +16,31 @@ deploymentTarget = "gce"
 
 [[ports]]
 localPort = 3000
-externalPort = 80
+externalPort = 3000
+
+[agent]
+expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python manage.py runserver 0.0.0.0:3000"
+waitForPort = 3000
+
+[workflows.workflow.metadata]
+outputType = "console"
