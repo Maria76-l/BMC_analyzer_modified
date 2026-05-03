@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "9IfcCcpQtj-LhelIH4PlR"
+uri = "file://ОТЧЁТ_MR-2026-001.md"
+type = "text"
+title = "Отчёт по заданию — BMC_analyzer MR-2026-001"
