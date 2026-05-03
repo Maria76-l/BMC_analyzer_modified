@@ -8,11 +8,24 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-bmc-analyzer-c
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 REPLIT_DOMAINS = os.environ.get("REPLIT_DOMAINS", "").split(',')
+REPLIT_DEV_DOMAIN = os.environ.get("REPLIT_DEV_DOMAIN", "")
 ALLOWED_HOSTS = REPLIT_DOMAINS + ['localhost', '127.0.0.1', '0.0.0.0']
 
-CSRF_TRUSTED_ORIGINS = ['https://' + d for d in REPLIT_DOMAINS if d] + [
+_trusted = []
+for _d in REPLIT_DOMAINS:
+    if _d:
+        _trusted.append('https://' + _d)
+        _trusted.append('https://' + _d + ':3000')
+if REPLIT_DEV_DOMAIN:
+    _trusted.append('https://' + REPLIT_DEV_DOMAIN)
+    _trusted.append('https://' + REPLIT_DEV_DOMAIN + ':3000')
+
+CSRF_TRUSTED_ORIGINS = _trusted + [
     'https://*.replit.dev',
     'https://*.repl.co',
+    'https://*.sisko.replit.dev',
+    'https://*.kirk.replit.dev',
+    'https://*.spock.replit.dev',
 ]
 
 CSRF_COOKIE_SECURE = not DEBUG
