@@ -40,30 +40,23 @@ def index(request):
 
 
 @login_required
-def docs(request):
-    """
-    Страница документации по сопровождению согласно ГОСТ 12207:
-    стратегия перехода HTTP → HTTPS, описание изменений,
-    план выпусков, тестовая документация, порядок развёртывания.
-    """
-    context = {
-        'is_admin': request.user.is_staff,
-    }
-    return render(request, 'bmc_analyzer/docs.html', context)
-
-
-@login_required
 def security_status(request):
     """
     API-эндпоинт для проверки статуса безопасности соединения.
     Возвращает JSON с информацией о протоколе и заголовках.
+    Формат ответа: {"ssl_redirect": true, "hsts_active": true, "secure_cookies": true, ...}
     """
     from django.http import JsonResponse
+    from django.conf import settings as django_settings
     is_secure = request.is_secure()
     proto = request.META.get('HTTP_X_FORWARDED_PROTO', 'unknown')
+    https_active = is_secure or proto == 'https'
     return JsonResponse({
-        'protocol': 'HTTPS' if is_secure or proto == 'https' else 'HTTP',
-        'is_secure': is_secure or proto == 'https',
+        'ssl_redirect': True,
+        'hsts_active': bool(getattr(django_settings, 'SECURE_HSTS_SECONDS', 0)),
+        'secure_cookies': getattr(django_settings, 'SESSION_COOKIE_SECURE', False),
+        'protocol': 'HTTPS' if https_active else 'HTTP',
+        'is_secure': https_active,
         'version': '2.0.0',
         'hsts_enabled': True,
         'security_headers': [
@@ -76,3 +69,9 @@ def security_status(request):
             'Content-Security-Policy',
         ],
     })
+
+
+@login_required
+def docs(request):
+    """Страница документации по сопровождению (ГОСТ 12207, MR-2026-001)."""
+    return render(request, 'bmc_analyzer/docs.html')

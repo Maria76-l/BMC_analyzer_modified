@@ -28,4 +28,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:3000/login/ || exit 1
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:3000"]
+CMD ["gunicorn", "django_project.wsgi:application", "--bind", "0.0.0.0:3000", "--workers", "2", "--timeout", "120"]
