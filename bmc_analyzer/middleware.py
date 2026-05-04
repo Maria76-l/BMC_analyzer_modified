@@ -5,13 +5,7 @@ logger = logging.getLogger(__name__)
 
 
 class HttpsRedirectMiddleware:
-    """
-    Перенаправляет HTTP-запросы на HTTPS.
-
-    В среде Replit/SaaS прокси уже обеспечивает TLS;
-    middleware проверяет заголовок X-Forwarded-Proto и при
-    необходимости выполняет redirect 301 (постоянный).
-    """
+    
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -33,19 +27,7 @@ class HttpsRedirectMiddleware:
 
 
 class SecurityHeadersMiddleware:
-    """
-    Устанавливает HTTP-заголовки безопасности на все ответы сервера
-    согласно рекомендациям OWASP и требованиям перехода на HTTPS.
-
-    Заголовки:
-    - Strict-Transport-Security  (HSTS)
-    - X-Content-Type-Options
-    - X-Frame-Options
-    - X-XSS-Protection
-    - Referrer-Policy
-    - Permissions-Policy
-    - Content-Security-Policy
-    """
+    
 
     HSTS_MAX_AGE = 31_536_000  # 1 год (согласно статистике вендоров)
 

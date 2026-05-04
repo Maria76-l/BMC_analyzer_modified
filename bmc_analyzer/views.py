@@ -70,8 +70,3 @@ def security_status(request):
         ],
     })
 
-
-@login_required
-def docs(request):
-    """Страница документации по сопровождению (ГОСТ 12207, MR-2026-001)."""
-    return render(request, 'bmc_analyzer/docs.html')

@@ -59,7 +59,7 @@ class TestModular:
 
 
 
-# TS-FUNC: Функциональное тестирование (ГОСТ Р 56920 §7.3, А.В.0001-05-ТС Таблица 3)
+# TS-FUNC: Функциональное тестирование 
 
 class TestFunctional(TestCase):
     
@@ -152,7 +152,7 @@ class TestFunctional(TestCase):
 
 
 
-# TS-ACC: Приёмочное тестирование (ГОСТ Р 56920 §7.6, А.В.0001-05-ТС Таблица 4)
+# TS-ACC: Приёмочное тестирование 
 
 class TestAcceptance(TestCase):
    
@@ -212,7 +212,7 @@ class TestAcceptance(TestCase):
             self.assertGreaterEqual(row['risk'], 0)
 
 
-# TS-SEC: Тестирование безопасности HTTPS (MR-2026-001, ГОСТ Р 56920 §7.4)
+# TS-SEC: Тестирование безопасности HTTPS 
 
 class TestHttpsMiddleware(TestCase):
    
@@ -256,9 +256,7 @@ class TestSecurityHeaders(TestCase):
         self.client.login(username='testuser', password='testpass123')
 
     def test_TC_HTTPS_04_hsts_header(self):
-        """
-        TC-HTTPS-04: Заголовок Strict-Transport-Security с max-age=31536000.
-        """
+        
         response = self.client.get('/', HTTP_X_FORWARDED_PROTO='https')
         self.assertIn('Strict-Transport-Security', response)
         hsts = response['Strict-Transport-Security']
@@ -267,37 +265,27 @@ class TestSecurityHeaders(TestCase):
         self.assertIn('preload', hsts)
 
     def test_TC_HTTPS_05_x_content_type_options(self):
-        """
-        TC-HTTPS-05: Заголовок X-Content-Type-Options: nosniff.
-        """
+        
         response = self.client.get('/', HTTP_X_FORWARDED_PROTO='https')
         self.assertEqual(response['X-Content-Type-Options'], 'nosniff')
 
     def test_TC_HTTPS_06_x_frame_options(self):
-        """
-        TC-HTTPS-06: Заголовок X-Frame-Options: SAMEORIGIN.
-        """
+        
         response = self.client.get('/', HTTP_X_FORWARDED_PROTO='https')
         self.assertEqual(response['X-Frame-Options'], 'SAMEORIGIN')
 
     def test_TC_HTTPS_07_x_xss_protection(self):
-        """
-        TC-HTTPS-07: Заголовок X-XSS-Protection: 1; mode=block.
-        """
+        
         response = self.client.get('/', HTTP_X_FORWARDED_PROTO='https')
         self.assertEqual(response['X-XSS-Protection'], '1; mode=block')
 
     def test_TC_HTTPS_08_referrer_policy(self):
-        """
-        TC-HTTPS-08: Заголовок Referrer-Policy: strict-origin-when-cross-origin.
-        """
+        
         response = self.client.get('/', HTTP_X_FORWARDED_PROTO='https')
         self.assertEqual(response['Referrer-Policy'], 'strict-origin-when-cross-origin')
 
     def test_TC_HTTPS_09_content_security_policy(self):
-        """
-        TC-HTTPS-09: Заголовок Content-Security-Policy содержит default-src.
-        """
+        
         response = self.client.get('/', HTTP_X_FORWARDED_PROTO='https')
         self.assertIn('Content-Security-Policy', response)
         self.assertIn("default-src 'self' https:", response['Content-Security-Policy'])
@@ -314,35 +302,23 @@ class TestAccessControl(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn('/login/', response['Location'])
 
-    
 
-    def test_TC_ACL_02_docs_requires_login(self):
-        response = Client().get('/docs/')
-        self.assertEqual(response.status_code, 302)
-        self.assertIn('/login/', response['Location'])
 
-    def test_TC_ACL_03_api_requires_login(self):
+    def test_TC_ACL_02_api_requires_login(self):
         response = Client().get('/api/security-status/')
         self.assertEqual(response.status_code, 302)
 
-    def test_TC_ACL_04_authorized_index(self):
+    def test_TC_ACL_03_authorized_index(self):
         user = User.objects.create_user(username='u1', password='p1234567')
         c = Client()
         c.login(username='u1', password='p1234567')
         self.assertEqual(c.get('/').status_code, 200)
 
-    def test_TC_ACL_05_authorized_docs(self):
-        user = User.objects.create_user(username='u2', password='p1234567')
-        c = Client()
-        c.login(username='u2', password='p1234567')
-        self.assertEqual(c.get('/docs/').status_code, 200)
-
-    
+   
 
 
 
-# TS-API: Интеграционное тестирование API (TC-API-01..05)
-
+# TS-API: Интеграционное тестирование API 
 class TestSecurityStatusAPI(TestCase):
     
 
