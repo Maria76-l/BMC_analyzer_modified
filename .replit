@@ -1,11 +1,12 @@
 run = ["python", "manage.py", "runserver", "0.0.0.0:3000"]
 entrypoint = "manage.py"
-modules = ["python-3.10:v18-20230807-322e88b"]
+modules = ["python-3.11"]
 
 hidden = [".pythonlibs"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "gobject-introspection", "gtk3", "pkg-config", "qhull", "tcl", "tk"]
 
 [unitTest]
 language = "python3"
@@ -18,8 +19,13 @@ deploymentTarget = "gce"
 localPort = 3000
 externalPort = 3000
 
+[[ports]]
+localPort = 5000
+externalPort = 5000
+
 [agent]
 expertMode = true
+stack = "BEST_EFFORT_FALLBACK"
 
 [workflows]
 runButton = "Project"
@@ -37,10 +43,10 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python manage.py runserver 0.0.0.0:3000"
-waitForPort = 3000
-
-[workflows.workflow.metadata]
-outputType = "console"
+args = "python manage.py runserver 0.0.0.0:5000"
+waitForPort = 5000

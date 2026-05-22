@@ -9,7 +9,7 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 REPLIT_DOMAINS = os.environ.get("REPLIT_DOMAINS", "").split(',')
 REPLIT_DEV_DOMAIN = os.environ.get("REPLIT_DEV_DOMAIN", "")
-ALLOWED_HOSTS = REPLIT_DOMAINS + ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = ['*']
 
 _trusted = []
 for _d in REPLIT_DOMAINS:
@@ -42,7 +42,7 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
-X_FRAME_OPTIONS = 'SAMEORIGIN'
+X_FRAME_OPTIONS = 'ALLOWALL'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -63,7 +63,6 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'django_project.urls'
