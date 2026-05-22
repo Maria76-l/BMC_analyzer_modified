@@ -1,0 +1,162 @@
+{% extends 'bmc_analyzer/base.html' %}
+{% block title %}Контроль целостности{% endblock %}
+{% block nav_integrity %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h4 class="mb-0"><i class="bi bi-patch-check me-2 text-info"></i>Контроль целостности компонентов BMC</h4>
+    <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-primary" onclick="runCheck()">
+            <i class="bi bi-arrow-repeat me-1"></i>Запустить проверку
+        </button>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-success">{{ ok_count }}</div>
+            <div class="text-muted small"><i class="bi bi-check-circle me-1"></i>В норме</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-danger">{{ fail_count }}</div>
+            <div class="text-muted small"><i class="bi bi-x-circle me-1"></i>Нарушений</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-secondary">{{ unknown_count }}</div>
+            <div class="text-muted small"><i class="bi bi-question-circle me-1"></i>Не проверено</div>
+        </div>
+    </div>
+</div>
+
+{% if fail_count > 0 %}
+<div class="alert alert-danger d-flex align-items-center mb-4">
+    <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+    <div>Обнаружено <strong>{{ fail_count }}</strong> нарушений целостности. Немедленно проверьте состояние компонентов.</div>
+</div>
+{% endif %}
+
+<div id="check-result" class="mb-3" style="display:none;"></div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex align-items-center gap-2">
+        <strong>Компоненты под защитой (SHA-256)</strong>
+        <span class="badge bg-secondary ms-auto">{{ records|length }} компонентов</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th>№</th>
+                        <th class="text-start">Компонент</th>
+                        <th>Эталонный хеш (SHA-256)</th>
+                        <th>Последняя проверка</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in records %}
+                    <tr class="text-center" id="row-{{ rec.id }}">
+                        <td>{{ forloop.counter }}</td>
+                        <td class="text-start">
+                            <strong>{{ rec.component }}</strong>
+                            {% if rec.description %}
+                                <div class="text-muted small">{{ rec.description }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="font-monospace small text-muted">{{ rec.reference_hash|slice:":32" }}…</td>
+                        <td class="small">
+                            {% if rec.last_checked %}
+                                {{ rec.last_checked|date:"d.m.Y H:i:s" }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td id="status-{{ rec.id }}">
+                            {% if rec.last_status == 'ok' %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>В норме</span>
+                            {% elif rec.last_status == 'fail' %}
+                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Нарушение</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="bi bi-question-circle me-1"></i>Не проверено</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1 justify-content-center">
+                                <button class="btn btn-outline-danger btn-sm"
+                                        onclick="simulateFail({{ rec.id }}, this)"
+                                        title="Симулировать нарушение целостности">
+                                    <i class="bi bi-bug"></i>
+                                </button>
+                                <button class="btn btn-outline-success btn-sm"
+                                        onclick="restoreRecord({{ rec.id }}, this)"
+                                        title="Восстановить эталонный хеш">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">Нет компонентов для проверки</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-white"><strong><i class="bi bi-info-circle me-1"></i>Методология контроля целостности</strong></div>
+    <div class="card-body small text-muted">
+        <p class="mb-2">Система периодически вычисляет хеш-суммы (SHA-256) критических компонентов BMC и сравнивает их с эталонными значениями, сохранёнными в защищённом хранилище контейнера.</p>
+        <ul class="mb-0">
+            <li>При обнаружении расхождения создаётся критическое оповещение.</li>
+            <li>Все результаты проверок фиксируются в журнале событий с хеш-цепочкой.</li>
+            <li>Кнопка <i class="bi bi-bug"></i> симулирует нарушение (изменение хеша) для демонстрации механизма.</li>
+            <li>Кнопка <i class="bi bi-arrow-counterclockwise"></i> восстанавливает эталонное состояние.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function getCsrf() {
+    return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken=')).split('=')[1];
+}
+
+function runCheck() {
+    fetch("{% url 'run_integrity_check' %}", {method:'POST', headers:{'X-CSRFToken':getCsrf()}})
+    .then(r=>r.json()).then(data=>{
+        let html = '<div class="alert alert-info alert-dismissible fade show"><strong>Результаты проверки:</strong><ul class="mb-0 mt-1">';
+        data.results.forEach(r=>{
+            const icon = r.status==='ok' ? '✅' : '❌';
+            html += `<li>${icon} ${r.component} — <strong>${r.status==='ok'?'В норме':'НАРУШЕНИЕ'}</strong></li>`;
+        });
+        html += '</ul><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+        document.getElementById('check-result').innerHTML = html;
+        document.getElementById('check-result').style.display = 'block';
+        setTimeout(()=>location.reload(), 2000);
+    }).catch(()=>alert('Ошибка при выполнении проверки'));
+}
+
+function simulateFail(id, btn) {
+    if (!confirm('Симулировать нарушение целостности этого компонента?')) return;
+    const fd = new FormData(); fd.append('component_id', id);
+    fetch("{% url 'simulate_integrity_fail' %}", {method:'POST', headers:{'X-CSRFToken':getCsrf()}, body: fd})
+    .then(r=>r.json()).then(()=>location.reload());
+}
+
+function restoreRecord(id, btn) {
+    const fd = new FormData(); fd.append('component_id', id);
+    fetch("{% url 'restore_integrity' %}", {method:'POST', headers:{'X-CSRFToken':getCsrf()}, body: fd})
+    .then(r=>r.json()).then(()=>location.reload());
+}
+</script>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends 'bmc_analyzer/base.html' %}
+{% block title %}Оповещения{% endblock %}
+{% block nav_alerts %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h4 class="mb-0"><i class="bi bi-bell me-2 text-warning"></i>Оповещения безопасности</h4>
+    {% if alerts %}
+    <button class="btn btn-sm btn-outline-secondary" onclick="dismissAll()">
+        <i class="bi bi-check2-all me-1"></i>Закрыть все
+    </button>
+    {% endif %}
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-danger">{{ critical_count }}</div>
+            <div class="text-muted small"><i class="bi bi-exclamation-octagon me-1"></i>Критические</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-warning">{{ warning_count }}</div>
+            <div class="text-muted small"><i class="bi bi-exclamation-triangle me-1"></i>Предупреждения</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-info">{{ info_count }}</div>
+            <div class="text-muted small"><i class="bi bi-info-circle me-1"></i>Информационные</div>
+        </div>
+    </div>
+</div>
+
+<div class="mb-3">
+    <a href="?show=active" class="btn btn-sm {% if show == 'active' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        Активные
+    </a>
+    <a href="?show=dismissed" class="btn btn-sm {% if show == 'dismissed' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        Закрытые
+    </a>
+    <a href="?show=all" class="btn btn-sm {% if show == 'all' %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+        Все
+    </a>
+</div>
+
+<div id="alerts-container">
+    {% for alert in alerts %}
+    <div class="card shadow-sm mb-3 alert-card" id="alert-{{ alert.id }}">
+        <div class="card-body d-flex align-items-start gap-3">
+            <div class="pt-1">
+                {% if alert.severity == 'critical' %}
+                    <i class="bi bi-exclamation-octagon-fill text-danger fs-4"></i>
+                {% elif alert.severity == 'warning' %}
+                    <i class="bi bi-exclamation-triangle-fill text-warning fs-4"></i>
+                {% else %}
+                    <i class="bi bi-info-circle-fill text-info fs-4"></i>
+                {% endif %}
+            </div>
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    {% if alert.severity == 'critical' %}
+                        <span class="badge bg-danger">Критическое</span>
+                    {% elif alert.severity == 'warning' %}
+                        <span class="badge bg-warning text-dark">Предупреждение</span>
+                    {% else %}
+                        <span class="badge bg-info text-dark">Информация</span>
+                    {% endif %}
+                    <strong>{{ alert.title }}</strong>
+                    <span class="text-muted small ms-auto">{{ alert.timestamp|date:"d.m.Y H:i:s" }}</span>
+                </div>
+                <div class="text-muted small" style="white-space:pre-line;">{{ alert.message }}</div>
+                {% if alert.dismissed_at %}
+                <div class="text-muted small mt-1">
+                    <i class="bi bi-check me-1"></i>Закрыто:
+                    {{ alert.dismissed_at|date:"d.m.Y H:i:s" }}
+                    {% if alert.dismissed_by %} пользователем {{ alert.dismissed_by.username }}{% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% if not alert.is_dismissed %}
+            <div>
+                <button class="btn btn-outline-secondary btn-sm" onclick="dismissAlert({{ alert.id }})">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-bell-slash fs-1 mb-3 d-block"></i>
+        {% if show == 'active' %}Нет активных оповещений
+        {% elif show == 'dismissed' %}Нет закрытых оповещений
+        {% else %}Оповещений нет{% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function getCsrf() {
+    return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken=')).split('=')[1];
+}
+function dismissAlert(id) {
+    fetch(`/alerts/dismiss/${id}/`, {method:'POST', headers:{'X-CSRFToken':getCsrf()}})
+    .then(r=>r.json()).then(()=>{
+        const el = document.getElementById('alert-' + id);
+        if (el) { el.style.opacity='0.4'; el.querySelector('button') && (el.querySelector('button').disabled=true); }
+        setTimeout(()=>location.reload(), 500);
+    });
+}
+function dismissAll() {
+    if (!confirm('Закрыть все активные оповещения?')) return;
+    fetch("{% url 'dismiss_all_alerts' %}", {method:'POST', headers:{'X-CSRFToken':getCsrf()}})
+    .then(r=>r.json()).then(()=>location.reload());
+}
+</script>
+{% endblock %}

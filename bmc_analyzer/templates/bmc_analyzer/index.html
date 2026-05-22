@@ -1,41 +1,74 @@
-<!-- Шаблон для страницы анализа BMC-команд. Расширяет базовый шаблон bmc_analyzer/base.html -->
 {% extends 'bmc_analyzer/base.html' %}
+{% block title %}Анализ угроз BMC{% endblock %}
+{% block nav_analysis %}active{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Анализ команд удалённого управления BMC</h1>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h4 class="mb-0"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Анализ команд удалённого управления BMC</h4>
+    <a href="{% url 'policies' %}" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-sliders me-1"></i>Управление политиками
+    </a>
+</div>
 
-<!-- Вкладки для переключения между разными представлениями данных -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-primary">{{ total_commands }}</div>
+            <div class="text-muted small">Всего команд</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-danger">{{ blocked_count }}</div>
+            <div class="text-muted small">Заблокировано</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-success">{{ allowed_count }}</div>
+            <div class="text-muted small">Разрешено</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-warning">{{ monitored_count }}</div>
+            <div class="text-muted small">Мониторинг</div>
+        </div>
+    </div>
+</div>
+
 <ul class="nav nav-tabs" id="riskTab" role="tablist">
     <li class="nav-item">
-        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#original">📊 Исходный индекс угрозы</button>
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#original">
+            <i class="bi bi-table me-1"></i>Исходный индекс угрозы
+        </button>
     </li>
     <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#enhanced">⚠️ Усиленный индекс угрозы</button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#enhanced">
+            <i class="bi bi-exclamation-triangle me-1"></i>Усиленный индекс угрозы
+        </button>
     </li>
     <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#charts">📈 Графики сравнения</button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#charts">
+            <i class="bi bi-graph-up me-1"></i>Графики сравнения
+        </button>
     </li>
 </ul>
-<!-- Содержимое вкладок -->
-<div class="tab-content mt-4">
-    <!-- Вкладка с исходным индексом угрозы -->
+
+<div class="tab-content mt-3">
     <div class="tab-pane fade show active" id="original">
         <div class="card shadow-sm">
-            <div class="card-header bg-white">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
                 <strong>Исходный индекс угрозы</strong>
-                <span class="badge bg-secondary ms-2">R = C × F</span>
+                <span class="badge bg-secondary">R = C × F</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <!-- Таблица с данными о командах и их индексе угрозы -->
-                    <table class="table table-bordered table-striped align-middle mb-0">
+                    <table class="table table-bordered table-hover align-middle mb-0">
                         <thead class="table-light text-center">
                             <tr>
-                                <th>№</th>
-                                <th>Команда</th>
-                                <th>Частота (F)</th>
-                                <th>Критичность (C)</th>
-                                <th>Индекс угрозы (R)</th>
+                                <th>№</th><th>Команда</th><th>Частота (F)</th>
+                                <th>Критичность (C)</th><th>Индекс угрозы (R)</th><th>Статус</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -45,26 +78,37 @@
                                 <td class="text-start">{{ item.command }}</td>
                                 <td>{{ item.frequency }}</td>
                                 <td>{{ item.criticality }}</td>
-                                <td class="fw-bold">{{ item.risk }}</td>
+                                <td class="fw-bold {% if item.risk > 2.0 %}text-danger{% elif item.risk > 1.0 %}text-warning{% else %}text-success{% endif %}">
+                                    {{ item.risk }}
+                                </td>
+                                <td>
+                                    {% if item.status == 'blocked' %}
+                                        <span class="badge bg-danger">Заблокировано</span>
+                                    {% elif item.status == 'allowed' %}
+                                        <span class="badge bg-success">Разрешено</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Мониторинг</span>
+                                    {% endif %}
+                                </td>
                             </tr>
+                            {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-3">Команды не найдены</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-        <!-- Графики в виде гистограммы и круговой диаграммы -->
-        <div class="row mt-4">
+        <div class="row mt-4 g-3">
             <div class="col-md-6">
                 <div class="card shadow-sm h-100">
                     <div class="card-header bg-white">Гистограмма индекса угрозы</div>
                     <div class="card-body text-center">
-                        <!-- Отображение гистограммы в формате base64 -->
                         <img src="data:image/png;base64,{{ bar_chart }}" class="img-fluid">
                         <div class="mt-2 small text-muted">
-                            <span style="background:#28a745; display:inline-block; width:12px; height:12px;"></span> ≤1.0 (низкий)
-                            <span style="background:#ffc107; display:inline-block; width:12px; height:12px; margin-left:10px;"></span> 1.0–2.0 (средний)
-                            <span style="background:#dc3545; display:inline-block; width:12px; height:12px; margin-left:10px;"></span> >2.0 (высокий)
+                            <span style="background:#28a745;display:inline-block;width:12px;height:12px;border-radius:2px;"></span> ≤1.0 — низкий &nbsp;
+                            <span style="background:#ffc107;display:inline-block;width:12px;height:12px;border-radius:2px;"></span> 1.0–2.0 — средний &nbsp;
+                            <span style="background:#dc3545;display:inline-block;width:12px;height:12px;border-radius:2px;"></span> >2.0 — высокий
                         </div>
                     </div>
                 </div>
@@ -80,23 +124,20 @@
             </div>
         </div>
     </div>
-<!-- Вкладка с усиленным индексом угрозы -->
+
     <div class="tab-pane fade" id="enhanced">
         <div class="card shadow-sm">
-            <div class="card-header bg-white">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
                 <strong>Усиленный индекс угрозы</strong>
-                <span class="badge bg-warning ms-2">критичность опасных команд ×1.2</span>
+                <span class="badge bg-warning text-dark">критичность опасных команд ×1.2</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped align-middle mb-0">
+                    <table class="table table-bordered table-hover align-middle mb-0">
                         <thead class="table-light text-center">
                             <tr>
-                                <th>№</th>
-                                <th>Команда</th>
-                                <th>Частота (F)</th>
-                                <th>Критичность (усиленная)</th>
-                                <th>Индекс угрозы (усиленный)</th>
+                                <th>№</th><th>Команда</th><th>Частота (F)</th>
+                                <th>Критичность (усил.)</th><th>Индекс угрозы (усил.)</th><th>Статус</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -106,8 +147,21 @@
                                 <td class="text-start">{{ item.command }}</td>
                                 <td>{{ item.frequency }}</td>
                                 <td>{{ item.criticality_enh }}</td>
-                                <td class="fw-bold">{{ item.risk_enh }}</td>
+                                <td class="fw-bold {% if item.risk_enh > 2.0 %}text-danger{% elif item.risk_enh > 1.0 %}text-warning{% else %}text-success{% endif %}">
+                                    {{ item.risk_enh }}
+                                </td>
+                                <td>
+                                    {% if item.status == 'blocked' %}
+                                        <span class="badge bg-danger">Заблокировано</span>
+                                    {% elif item.status == 'allowed' %}
+                                        <span class="badge bg-success">Разрешено</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Мониторинг</span>
+                                    {% endif %}
+                                </td>
                             </tr>
+                            {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-3">Команды не найдены</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -115,17 +169,15 @@
             </div>
         </div>
     </div>
-<!-- Вкладка с графиками сравнения индексов угрозы -->
+
     <div class="tab-pane fade" id="charts">
         <div class="card shadow-sm">
             <div class="card-header bg-white">Сравнение исходного и усиленного индекса угрозы</div>
             <div class="card-body text-center">
                 <img src="data:image/png;base64,{{ line_chart }}" class="img-fluid">
-                <div class="mt-2 small text-muted">Синий — исходный, оранжевый — усиленный (для команд с критичностью >0.5)</div>
+                <div class="mt-2 small text-muted">Синий — исходный, оранжевый — усиленный (для команд с критичностью > 0.5)</div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
-
-<!--Гринина А.В.: реплика открылась с первого раза, работает корректно-->

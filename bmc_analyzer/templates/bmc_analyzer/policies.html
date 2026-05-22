@@ -1,0 +1,168 @@
+{% extends 'bmc_analyzer/base.html' %}
+{% block title %}Политики команд BMC{% endblock %}
+{% block nav_policies %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h4 class="mb-0"><i class="bi bi-shield-check me-2 text-success"></i>Политики команд BMC</h4>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-danger">{{ blocked_count }}</div>
+            <div class="text-muted small"><i class="bi bi-x-circle me-1"></i>Заблокировано</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-success">{{ allowed_count }}</div>
+            <div class="text-muted small"><i class="bi bi-check-circle me-1"></i>Разрешено</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card stat-card text-center py-3">
+            <div class="fs-2 fw-bold text-warning">{{ monitored_count }}</div>
+            <div class="text-muted small"><i class="bi bi-eye me-1"></i>Мониторинг</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white"><strong>Список команд и политики безопасности</strong></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle mb-0">
+                        <thead class="table-light text-center">
+                            <tr>
+                                <th>№</th>
+                                <th class="text-start">Команда</th>
+                                <th>Критичность</th>
+                                <th>Частота</th>
+                                <th>Статус</th>
+                                <th>Изменить</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in policies %}
+                            <tr class="text-center">
+                                <td>{{ forloop.counter }}</td>
+                                <td class="text-start">
+                                    <strong>{{ p.command }}</strong>
+                                    {% if p.description %}
+                                        <div class="text-muted small">{{ p.description }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="fw-bold {% if p.criticality > 0.7 %}text-danger{% elif p.criticality > 0.4 %}text-warning{% else %}text-success{% endif %}">
+                                        {{ p.criticality }}
+                                    </span>
+                                </td>
+                                <td>{{ p.frequency }}</td>
+                                <td>
+                                    {% if p.status == 'blocked' %}
+                                        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Заблокировано</span>
+                                    {% elif p.status == 'allowed' %}
+                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Разрешено</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-eye me-1"></i>Мониторинг</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="update_status" value="1">
+                                        <input type="hidden" name="policy_id" value="{{ p.id }}">
+                                        <select name="new_status" class="form-select form-select-sm d-inline-block w-auto me-1"
+                                                onchange="this.form.submit()">
+                                            <option value="allowed" {% if p.status == 'allowed' %}selected{% endif %}>Разрешить</option>
+                                            <option value="monitored" {% if p.status == 'monitored' %}selected{% endif %}>Мониторинг</option>
+                                            <option value="blocked" {% if p.status == 'blocked' %}selected{% endif %}>Заблокировать</option>
+                                        </select>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-4">Нет команд в базе</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <strong><i class="bi bi-play-circle me-1 text-primary"></i>Симулятор команды</strong>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Проверьте, как система среагирует на выполнение команды с указанным IP-адресом источника.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Команда BMC</label>
+                        <input type="text" name="command_name" class="form-control form-control-sm"
+                               placeholder="Например: chassis power off"
+                               value="{% if simulate_result %}{{ simulate_result.command }}{% endif %}">
+                        <div class="form-text">Введите команду или выберите из политик</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">IP-адрес источника</label>
+                        <input type="text" name="src_ip" class="form-control form-control-sm"
+                               placeholder="192.168.1.100">
+                    </div>
+                    <button type="submit" name="simulate" value="1" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-send me-1"></i>Симулировать запрос
+                    </button>
+                </form>
+
+                {% if simulate_result %}
+                <hr>
+                <div class="mt-2">
+                    <div class="small fw-semibold mb-2">Результат проверки:</div>
+                    {% if simulate_result.status == 'blocked' %}
+                    <div class="alert alert-danger py-2 px-3 mb-2">
+                        <i class="bi bi-x-octagon-fill me-1"></i>
+                        <strong>ЗАБЛОКИРОВАНО</strong> — команда «{{ simulate_result.command }}» запрещена политикой безопасности.
+                    </div>
+                    {% elif simulate_result.status == 'allowed' %}
+                    <div class="alert alert-success py-2 px-3 mb-2">
+                        <i class="bi bi-check-circle-fill me-1"></i>
+                        <strong>РАЗРЕШЕНО</strong> — команда «{{ simulate_result.command }}» разрешена политикой.
+                    </div>
+                    {% elif simulate_result.status == 'monitored' %}
+                    <div class="alert alert-warning py-2 px-3 mb-2">
+                        <i class="bi bi-eye-fill me-1"></i>
+                        <strong>МОНИТОРИНГ</strong> — команда «{{ simulate_result.command }}» выполнена, событие зафиксировано.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-secondary py-2 px-3 mb-2">
+                        <i class="bi bi-question-circle me-1"></i>
+                        <strong>НЕИЗВЕСТНАЯ КОМАНДА</strong> — «{{ simulate_result.command }}» не найдена в политиках, зафиксирована как подозрительная.
+                    </div>
+                    {% endif %}
+                    <table class="table table-sm table-bordered small mb-0">
+                        <tr><td class="text-muted">Источник IP</td><td>{{ simulate_result.src_ip }}</td></tr>
+                        {% if simulate_result.criticality %}<tr><td class="text-muted">Критичность</td><td>{{ simulate_result.criticality }}</td></tr>{% endif %}
+                    </table>
+                    <div class="text-muted small mt-2"><i class="bi bi-journal-check me-1"></i>Событие записано в журнал</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-white"><strong><i class="bi bi-info-circle me-1"></i>Легенда статусов</strong></div>
+            <div class="card-body small">
+                <div class="mb-2"><span class="badge bg-danger me-2">Заблокировано</span>Запрос отклоняется с сообщением об ошибке</div>
+                <div class="mb-2"><span class="badge bg-success me-2">Разрешено</span>Команда передаётся на BMC без ограничений</div>
+                <div><span class="badge bg-warning text-dark me-2">Мониторинг</span>Команда выполняется, но фиксируется в журнале</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
