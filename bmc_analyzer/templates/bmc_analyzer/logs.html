@@ -63,13 +63,12 @@
                         <th>IP-адрес</th>
                         <th>Команда / Детали</th>
                         <th>Хеш записи</th>
-                        <th>Цепочка</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in entries_with_verify %}
                     {% with entry=item.entry %}
-                    <tr class="text-center {% if not item.hash_ok %}table-danger{% endif %}">
+                    <tr class="text-center">
                         <td>{{ entry.id }}</td>
                         <td class="text-nowrap">{{ entry.timestamp|date:"d.m.Y H:i:s" }}</td>
                         <td>
@@ -108,17 +107,10 @@
                         <td class="font-monospace text-muted" style="font-size:0.7rem;">
                             {{ entry.entry_hash|slice:":16" }}…
                         </td>
-                        <td>
-                            {% if item.hash_ok %}
-                                <span class="text-success" title="Хеш-цепочка в порядке"><i class="bi bi-link-45deg"></i>✓</span>
-                            {% else %}
-                                <span class="text-danger" title="Нарушение хеш-цепочки!"><i class="bi bi-exclamation-triangle-fill"></i></span>
-                            {% endif %}
-                        </td>
                     </tr>
                     {% endwith %}
                     {% empty %}
-                    <tr><td colspan="8" class="text-center text-muted py-4">Событий не найдено</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4">Событий не найдено</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -152,15 +144,4 @@
 </nav>
 {% endif %}
 
-<div class="card shadow-sm mt-4">
-    <div class="card-header bg-white"><strong><i class="bi bi-lock me-1"></i>Защита журнала</strong></div>
-    <div class="card-body small text-muted">
-        <p class="mb-2">Каждая запись журнала защищена SHA-256 хеш-цепочкой: хеш каждой записи вычисляется на основе её содержимого и хеша предыдущей записи.</p>
-        <ul class="mb-0">
-            <li>Колонка «Цепочка» показывает статус верификации хеша для каждой записи.</li>
-            <li>Строка с <span class="text-danger">красным фоном</span> означает нарушение целостности журнала.</li>
-            <li>Удаление и изменение записей через интерфейс невозможно.</li>
-        </ul>
-    </div>
-</div>
 {% endblock %}
