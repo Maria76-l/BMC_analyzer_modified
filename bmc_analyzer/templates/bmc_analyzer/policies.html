@@ -5,24 +5,27 @@
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h4 class="mb-0"><i class="bi bi-shield-check me-2 text-success"></i>Политики команд BMC</h4>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCommandModal">
+        <i class="bi bi-plus-circle me-1"></i>Добавить команду
+    </button>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-4">
-        <div class="card stat-card text-center py-3">
-            <div class="fs-2 fw-bold text-danger">{{ blocked_count }}</div>
+        <div class="card stat-card text-center py-3" id="stat-blocked">
+            <div class="fs-2 fw-bold text-danger" id="cnt-blocked">{{ blocked_count }}</div>
             <div class="text-muted small"><i class="bi bi-x-circle me-1"></i>Заблокировано</div>
         </div>
     </div>
     <div class="col-4">
         <div class="card stat-card text-center py-3">
-            <div class="fs-2 fw-bold text-success">{{ allowed_count }}</div>
+            <div class="fs-2 fw-bold text-success" id="cnt-allowed">{{ allowed_count }}</div>
             <div class="text-muted small"><i class="bi bi-check-circle me-1"></i>Разрешено</div>
         </div>
     </div>
     <div class="col-4">
         <div class="card stat-card text-center py-3">
-            <div class="fs-2 fw-bold text-warning">{{ monitored_count }}</div>
+            <div class="fs-2 fw-bold text-warning" id="cnt-monitored">{{ monitored_count }}</div>
             <div class="text-muted small"><i class="bi bi-eye me-1"></i>Мониторинг</div>
         </div>
     </div>
@@ -31,28 +34,34 @@
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card shadow-sm">
-            <div class="card-header bg-white"><strong>Список команд и политики безопасности</strong></div>
+            <div class="card-header bg-white d-flex align-items-center justify-content-between">
+                <strong>Список команд и политики безопасности</strong>
+                <div class="input-group input-group-sm" style="max-width:240px">
+                    <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" id="cmdSearch" class="form-control border-start-0" placeholder="Фильтр по команде…">
+                </div>
+            </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover align-middle mb-0">
+                    <table class="table table-bordered table-hover align-middle mb-0" id="policiesTable">
                         <thead class="table-light text-center">
                             <tr>
-                                <th>№</th>
+                                <th style="width:36px">№</th>
                                 <th class="text-start">Команда</th>
-                                <th>Критичность</th>
-                                <th>Частота</th>
-                                <th>Статус</th>
-                                <th>Изменить</th>
+                                <th style="width:100px">Критичность</th>
+                                <th style="width:90px">Частота</th>
+                                <th style="width:140px">Статус</th>
+                                <th style="width:48px"></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="policiesTbody">
                             {% for p in policies %}
-                            <tr class="text-center">
-                                <td>{{ forloop.counter }}</td>
+                            <tr class="text-center policy-row" data-id="{{ p.id }}" data-cmd="{{ p.command|lower }}">
+                                <td class="row-num text-muted small">{{ forloop.counter }}</td>
                                 <td class="text-start">
-                                    <strong>{{ p.command }}</strong>
+                                    <strong class="cmd-name d-block">{{ p.command }}</strong>
                                     {% if p.description %}
-                                        <div class="text-muted small">{{ p.description }}</div>
+                                    <span class="text-muted small">{{ p.description }}</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -60,109 +69,496 @@
                                         {{ p.criticality }}
                                     </span>
                                 </td>
-                                <td>{{ p.frequency }}</td>
+                                <td class="text-muted small">{{ p.frequency }}/сут</td>
                                 <td>
-                                    {% if p.status == 'blocked' %}
-                                        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Заблокировано</span>
-                                    {% elif p.status == 'allowed' %}
-                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Разрешено</span>
-                                    {% else %}
-                                        <span class="badge bg-warning text-dark"><i class="bi bi-eye me-1"></i>Мониторинг</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <form method="post" class="d-inline">
+                                    <form method="post" class="d-inline status-form">
                                         {% csrf_token %}
                                         <input type="hidden" name="update_status" value="1">
                                         <input type="hidden" name="policy_id" value="{{ p.id }}">
-                                        <select name="new_status" class="form-select form-select-sm d-inline-block w-auto me-1"
+                                        <select name="new_status" class="form-select form-select-sm d-inline-block w-auto"
                                                 onchange="this.form.submit()">
-                                            <option value="allowed" {% if p.status == 'allowed' %}selected{% endif %}>Разрешить</option>
-                                            <option value="monitored" {% if p.status == 'monitored' %}selected{% endif %}>Мониторинг</option>
-                                            <option value="blocked" {% if p.status == 'blocked' %}selected{% endif %}>Заблокировать</option>
+                                            <option value="allowed" {% if p.status == 'allowed' %}selected{% endif %}>✓ Разрешить</option>
+                                            <option value="monitored" {% if p.status == 'monitored' %}selected{% endif %}>👁 Мониторинг</option>
+                                            <option value="blocked" {% if p.status == 'blocked' %}selected{% endif %}>✕ Заблокировать</option>
                                         </select>
                                     </form>
                                 </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger btn-delete-policy p-1 lh-1"
+                                            data-id="{{ p.id }}" data-cmd="{{ p.command }}"
+                                            title="Удалить команду">
+                                        <i class="bi bi-trash3 small"></i>
+                                    </button>
+                                </td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="6" class="text-center text-muted py-4">Нет команд в базе</td></tr>
+                            <tr id="emptyRow"><td colspan="6" class="text-center text-muted py-4">Нет команд в базе</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
+            <div class="card-footer bg-white py-2 small text-muted" id="tableFooter">
+                Всего: <span id="visibleCount">{{ policies|length }}</span> из {{ policies|length }} команд
+            </div>
         </div>
     </div>
 
     <div class="col-lg-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white">
-                <strong><i class="bi bi-play-circle me-1 text-primary"></i>Симулятор команды</strong>
+        <!-- SIMULATOR -->
+        <div class="card shadow-sm" id="simulatorCard">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between">
+                <strong><i class="bi bi-terminal me-1 text-primary"></i>Симулятор BMC-запроса</strong>
+                <span class="badge bg-secondary" id="sim-protocol">IPMI/RMCP+</span>
             </div>
-            <div class="card-body">
-                <p class="text-muted small mb-3">Проверьте, как система среагирует на выполнение команды с указанным IP-адресом источника.</p>
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Команда BMC</label>
-                        <input type="text" name="command_name" class="form-control form-control-sm"
-                               placeholder="Например: chassis power off"
-                               value="{% if simulate_result %}{{ simulate_result.command }}{% endif %}">
-                        <div class="form-text">Введите команду или выберите из политик</div>
+            <div class="card-body pb-2">
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold mb-1">Команда BMC</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" id="simCmd" class="form-control font-monospace"
+                               placeholder="chassis power off"
+                               list="cmdSuggestions" autocomplete="off">
+                        <datalist id="cmdSuggestions">
+                            {% for cmd in commands_json %}<option value="{{ cmd }}">{% endfor %}
+                        </datalist>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">IP-адрес источника</label>
-                        <input type="text" name="src_ip" class="form-control form-control-sm"
-                               placeholder="192.168.1.100">
-                    </div>
-                    <button type="submit" name="simulate" value="1" class="btn btn-primary btn-sm w-100">
-                        <i class="bi bi-send me-1"></i>Симулировать запрос
-                    </button>
-                </form>
-
-                {% if simulate_result %}
-                <hr>
-                <div class="mt-2">
-                    <div class="small fw-semibold mb-2">Результат проверки:</div>
-                    {% if simulate_result.status == 'blocked' %}
-                    <div class="alert alert-danger py-2 px-3 mb-2">
-                        <i class="bi bi-x-octagon-fill me-1"></i>
-                        <strong>ЗАБЛОКИРОВАНО</strong> — команда «{{ simulate_result.command }}» запрещена политикой безопасности.
-                    </div>
-                    {% elif simulate_result.status == 'allowed' %}
-                    <div class="alert alert-success py-2 px-3 mb-2">
-                        <i class="bi bi-check-circle-fill me-1"></i>
-                        <strong>РАЗРЕШЕНО</strong> — команда «{{ simulate_result.command }}» разрешена политикой.
-                    </div>
-                    {% elif simulate_result.status == 'monitored' %}
-                    <div class="alert alert-warning py-2 px-3 mb-2">
-                        <i class="bi bi-eye-fill me-1"></i>
-                        <strong>МОНИТОРИНГ</strong> — команда «{{ simulate_result.command }}» выполнена, событие зафиксировано.
-                    </div>
-                    {% else %}
-                    <div class="alert alert-secondary py-2 px-3 mb-2">
-                        <i class="bi bi-question-circle me-1"></i>
-                        <strong>НЕИЗВЕСТНАЯ КОМАНДА</strong> — «{{ simulate_result.command }}» не найдена в политиках, зафиксирована как подозрительная.
-                    </div>
-                    {% endif %}
-                    <table class="table table-sm table-bordered small mb-0">
-                        <tr><td class="text-muted">Источник IP</td><td>{{ simulate_result.src_ip }}</td></tr>
-                        {% if simulate_result.criticality %}<tr><td class="text-muted">Критичность</td><td>{{ simulate_result.criticality }}</td></tr>{% endif %}
-                    </table>
-                    <div class="text-muted small mt-2"><i class="bi bi-journal-check me-1"></i>Событие записано в журнал</div>
+                    <div class="form-text mt-1">Введите команду или выберите из списка политик</div>
                 </div>
-                {% endif %}
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold mb-1">IP-адрес источника</label>
+                    <input type="text" id="simIP" class="form-control form-control-sm font-monospace"
+                           placeholder="192.168.1.100">
+                    <div class="form-text">IPv4 или IPv6; оставьте пустым для автоопределения</div>
+                </div>
+                <button id="btnSimulate" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-send me-1"></i>Отправить запрос
+                </button>
+            </div>
+
+            <!-- Terminal output -->
+            <div id="termWrap" class="mx-3 mb-3 mt-0 d-none">
+                <div class="rounded overflow-hidden border" style="background:#0d1117;font-size:0.75rem">
+                    <div class="d-flex align-items-center px-3 py-1" style="background:#161b22;border-bottom:1px solid #30363d">
+                        <span class="me-2" style="width:10px;height:10px;border-radius:50%;background:#ff5f57;display:inline-block"></span>
+                        <span class="me-2" style="width:10px;height:10px;border-radius:50%;background:#febc2e;display:inline-block"></span>
+                        <span class="me-2" style="width:10px;height:10px;border-radius:50%;background:#28c840;display:inline-block"></span>
+                        <span class="text-secondary ms-2 font-monospace" style="font-size:0.7rem">bmc-security-container — bash</span>
+                    </div>
+                    <div id="termOutput" class="p-3 font-monospace"
+                         style="color:#e6edf3;min-height:140px;white-space:pre-wrap;line-height:1.6">
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="card shadow-sm mt-3">
             <div class="card-header bg-white"><strong><i class="bi bi-info-circle me-1"></i>Легенда статусов</strong></div>
             <div class="card-body small">
-                <div class="mb-2"><span class="badge bg-danger me-2">Заблокировано</span>Запрос отклоняется с сообщением об ошибке</div>
+                <div class="mb-2"><span class="badge bg-danger me-2">Заблокировано</span>Запрос отклоняется, событие фиксируется, создаётся оповещение</div>
                 <div class="mb-2"><span class="badge bg-success me-2">Разрешено</span>Команда передаётся на BMC без ограничений</div>
-                <div><span class="badge bg-warning text-dark me-2">Мониторинг</span>Команда выполняется, но фиксируется в журнале</div>
+                <div><span class="badge bg-warning text-dark me-2">Мониторинг</span>Команда выполняется, событие записывается в журнал</div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- ─── ADD COMMAND MODAL ─── -->
+<div class="modal fade" id="addCommandModal" tabindex="-1" aria-labelledby="addCommandModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCommandModalLabel">
+                    <i class="bi bi-plus-circle me-2 text-primary"></i>Добавить команду BMC
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="addErrAlert" class="alert alert-danger d-none py-2 small"></div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Команда <span class="text-danger">*</span></label>
+                    <input type="text" id="addCmd" class="form-control font-monospace"
+                           placeholder="Например: fru read 0">
+                    <div class="form-text">Имя команды IPMI/RMCP+, уникальное в базе</div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Критичность</label>
+                        <div class="input-group">
+                            <input type="number" id="addCrit" class="form-control" min="0" max="1" step="0.05" value="0.5">
+                            <span class="input-group-text">0–1</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Частота (в сутки)</label>
+                        <input type="number" id="addFreq" class="form-control" min="1" value="10">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Начальный статус</label>
+                    <div class="d-flex gap-2">
+                        <div class="form-check flex-fill border rounded px-3 py-2" id="opt-monitored">
+                            <input class="form-check-input" type="radio" name="addStatus" id="r-monitored" value="monitored" checked>
+                            <label class="form-check-label small" for="r-monitored">
+                                <span class="badge bg-warning text-dark mb-1 d-block">Мониторинг</span>
+                                Выполняется, логируется
+                            </label>
+                        </div>
+                        <div class="form-check flex-fill border rounded px-3 py-2" id="opt-allowed">
+                            <input class="form-check-input" type="radio" name="addStatus" id="r-allowed" value="allowed">
+                            <label class="form-check-label small" for="r-allowed">
+                                <span class="badge bg-success mb-1 d-block">Разрешено</span>
+                                Без ограничений
+                            </label>
+                        </div>
+                        <div class="form-check flex-fill border rounded px-3 py-2" id="opt-blocked">
+                            <input class="form-check-input" type="radio" name="addStatus" id="r-blocked" value="blocked">
+                            <label class="form-check-label small" for="r-blocked">
+                                <span class="badge bg-danger mb-1 d-block">Заблокировано</span>
+                                Запросы отклоняются
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-1">
+                    <label class="form-label fw-semibold">Описание</label>
+                    <textarea id="addDesc" class="form-control form-control-sm" rows="2"
+                              placeholder="Назначение команды, причина выбора статуса…"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnAddSubmit">
+                    <i class="bi bi-plus-circle me-1"></i>Добавить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── DELETE CONFIRM MODAL ─── -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title text-danger"><i class="bi bi-trash3 me-1"></i>Удалить команду?</h6>
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="mb-0 small">Команда <strong id="deleteModalCmd" class="font-monospace"></strong> будет удалена из политик безопасности. Действие необратимо.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-sm btn-danger" id="btnDeleteConfirm">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const CSRF = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken='))?.split('=')[1] || '';
+
+// ─── SEARCH FILTER ───────────────────────────────────────────────────────────
+document.getElementById('cmdSearch').addEventListener('input', function(){
+    const q = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#policiesTbody .policy-row');
+    let visible = 0;
+    rows.forEach(r => {
+        const match = r.dataset.cmd.includes(q);
+        r.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+    document.getElementById('visibleCount').textContent = visible;
+});
+
+// ─── SIMULATOR ───────────────────────────────────────────────────────────────
+const term = document.getElementById('termOutput');
+const termWrap = document.getElementById('termWrap');
+
+function termLine(text, color){
+    const span = document.createElement('span');
+    span.style.color = color || '#e6edf3';
+    span.textContent = text + '\n';
+    term.appendChild(span);
+}
+
+function termClear(){ term.innerHTML = ''; }
+
+async function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+document.getElementById('btnSimulate').addEventListener('click', async function(){
+    const cmd = document.getElementById('simCmd').value.trim();
+    const ip  = document.getElementById('simIP').value.trim();
+    if (!cmd){ document.getElementById('simCmd').focus(); return; }
+
+    termWrap.classList.remove('d-none');
+    termClear();
+    this.disabled = true;
+
+    const ts = new Date().toISOString().replace('T',' ').slice(0,19);
+    termLine(`[${ts}] $ ipmiutil cmd -N ${ip || 'bmc.local'} -U admin -P *** -c`, '#8b949e');
+    await sleep(200);
+    termLine(`> IPMI/RMCP+ connection established`, '#3fb950');
+    await sleep(150);
+    termLine(`> Authenticating session (RAKP)…`, '#8b949e');
+    await sleep(180);
+    termLine(`> Session ID: 0x${Math.random().toString(16).slice(2,10).toUpperCase()}`, '#8b949e');
+    await sleep(120);
+    termLine(`> Sending command: ${cmd}`, '#79c0ff');
+    await sleep(300);
+
+    let data;
+    try {
+        const fd = new FormData();
+        fd.append('command', cmd);
+        fd.append('src_ip', ip);
+        fd.append('csrfmiddlewaretoken', CSRF);
+        const r = await fetch('/policies/simulate/', { method:'POST', body:fd });
+        data = await r.json();
+        if (!r.ok){ throw new Error(data.error || `HTTP ${r.status}`); }
+    } catch(e) {
+        await sleep(100);
+        termLine(`> ERROR: ${e.message}`, '#ff7b72');
+        this.disabled = false;
+        return;
+    }
+
+    await sleep(100);
+
+    if (data.status === 'blocked') {
+        termLine(`> Policy engine: REJECT`, '#ff7b72');
+        await sleep(80);
+        termLine(`> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, '#ff7b72');
+        termLine(`> ✕ ДОСТУП ЗАПРЕЩЁН`, '#ff7b72');
+        termLine(`> Команда «${data.command}» заблокирована политикой безопасности.`, '#ff7b72');
+        if (data.criticality != null)
+            termLine(`> Критичность: ${data.criticality}  (ВЫСОКАЯ УГРОЗА)`, '#ffa657');
+        termLine(`> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, '#ff7b72');
+        await sleep(80);
+        termLine(`> Alert created: да  |  Event ID: #${Math.floor(Math.random()*9000+1000)}`, '#8b949e');
+    } else if (data.status === 'allowed') {
+        termLine(`> Policy engine: ALLOW`, '#3fb950');
+        await sleep(80);
+        termLine(`> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, '#3fb950');
+        termLine(`> ✓ КОМАНДА ВЫПОЛНЕНА`, '#3fb950');
+        termLine(`> «${data.command}» передана на BMC без ограничений.`, '#3fb950');
+        if (data.criticality != null)
+            termLine(`> Критичность: ${data.criticality}`, '#8b949e');
+        termLine(`> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, '#3fb950');
+        await sleep(80);
+        termLine(`> Alert created: нет  |  Event ID: #${Math.floor(Math.random()*9000+1000)}`, '#8b949e');
+    } else if (data.status === 'monitored') {
+        termLine(`> Policy engine: MONITOR`, '#e3b341');
+        await sleep(80);
+        termLine(`> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, '#e3b341');
+        termLine(`> 👁 МОНИТОРИНГ`, '#e3b341');
+        termLine(`> «${data.command}» выполнена, событие зафиксировано.`, '#e3b341');
+        if (data.criticality != null)
+            termLine(`> Критичность: ${data.criticality}`, '#8b949e');
+        termLine(`> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`, '#e3b341');
+        await sleep(80);
+        termLine(`> Alert created: нет  |  Event ID: #${Math.floor(Math.random()*9000+1000)}`, '#8b949e');
+    } else {
+        termLine(`> Policy engine: UNKNOWN COMMAND — escalating to monitor`, '#e3b341');
+        await sleep(80);
+        termLine(`> ⚠ КОМАНДА НЕ В ПОЛИТИКАХ`, '#e3b341');
+        termLine(`> «${data.command}» не найдена в базе политик, зафиксирована как подозрительная.`, '#ffa657');
+        await sleep(80);
+        termLine(`> Event ID: #${Math.floor(Math.random()*9000+1000)}`, '#8b949e');
+    }
+
+    await sleep(80);
+    termLine(`> Source IP: ${data.src_ip}  |  User: ${data.username}  |  Protocol: IPMI/RMCP+`, '#8b949e');
+    termLine(`[${new Date().toISOString().replace('T',' ').slice(0,19)}] Session closed.`, '#8b949e');
+
+    this.disabled = false;
+});
+
+// Quick-fill from table row
+document.getElementById('policiesTbody').addEventListener('click', function(e){
+    const row = e.target.closest('.policy-row');
+    if (!row || e.target.closest('.btn-delete-policy') || e.target.closest('select') || e.target.closest('.status-form')) return;
+    document.getElementById('simCmd').value = row.querySelector('.cmd-name').textContent.trim();
+    document.getElementById('simulatorCard').scrollIntoView({behavior:'smooth', block:'nearest'});
+    document.getElementById('simCmd').focus();
+});
+
+// ─── ADD COMMAND ─────────────────────────────────────────────────────────────
+const addModal = new bootstrap.Modal(document.getElementById('addCommandModal'));
+const addErrAlert = document.getElementById('addErrAlert');
+
+document.getElementById('btnAddSubmit').addEventListener('click', async function(){
+    const cmd = document.getElementById('addCmd').value.trim();
+    if (!cmd){ addErrAlert.textContent='Введите имя команды.'; addErrAlert.classList.remove('d-none'); return; }
+    addErrAlert.classList.add('d-none');
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Добавление…';
+
+    const crit = parseFloat(document.getElementById('addCrit').value) || 0.5;
+    const freq = parseInt(document.getElementById('addFreq').value) || 1;
+    const status = document.querySelector('input[name="addStatus"]:checked').value;
+    const desc = document.getElementById('addDesc').value.trim();
+
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    fd.append('command', cmd);
+    fd.append('criticality', crit);
+    fd.append('frequency', freq);
+    fd.append('status', status);
+    fd.append('description', desc);
+
+    try {
+        const r = await fetch('/policies/add/', {method:'POST', body:fd});
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+
+        // Insert row into table
+        insertPolicyRow(data);
+        updateCounters(status, +1);
+
+        // Reset form
+        document.getElementById('addCmd').value = '';
+        document.getElementById('addCrit').value = '0.5';
+        document.getElementById('addFreq').value = '10';
+        document.getElementById('addDesc').value = '';
+        document.getElementById('r-monitored').checked = true;
+        addModal.hide();
+    } catch(e) {
+        addErrAlert.textContent = e.message;
+        addErrAlert.classList.remove('d-none');
+    }
+
+    this.disabled = false;
+    this.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Добавить';
+});
+
+function statusBadge(s){
+    if (s==='blocked') return '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Заблокировано</span>';
+    if (s==='allowed') return '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Разрешено</span>';
+    return '<span class="badge bg-warning text-dark"><i class="bi bi-eye me-1"></i>Мониторинг</span>';
+}
+
+function critColor(c){ return c>0.7?'text-danger':c>0.4?'text-warning':'text-success'; }
+
+function insertPolicyRow(data){
+    const tbody = document.getElementById('policiesTbody');
+    const emptyRow = document.getElementById('emptyRow');
+    if (emptyRow) emptyRow.remove();
+
+    const rows = tbody.querySelectorAll('.policy-row');
+    const num = rows.length + 1;
+    const crit = parseFloat(data.criticality);
+
+    const csrf = document.querySelector('#policiesTable input[name=csrfmiddlewaretoken]')?.value || CSRF;
+
+    const tr = document.createElement('tr');
+    tr.className='text-center policy-row';
+    tr.dataset.id = data.id;
+    tr.dataset.cmd = data.command.toLowerCase();
+    tr.innerHTML = `
+      <td class="row-num text-muted small">${num}</td>
+      <td class="text-start">
+        <strong class="cmd-name d-block">${escHtml(data.command)}</strong>
+        ${data.description ? `<span class="text-muted small">${escHtml(data.description)}</span>` : ''}
+      </td>
+      <td><span class="fw-bold ${critColor(crit)}">${crit}</span></td>
+      <td class="text-muted small">${data.frequency}/сут</td>
+      <td>
+        <form method="post" class="d-inline status-form">
+          <input type="hidden" name="csrfmiddlewaretoken" value="${csrf}">
+          <input type="hidden" name="update_status" value="1">
+          <input type="hidden" name="policy_id" value="${data.id}">
+          <select name="new_status" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+            <option value="allowed" ${data.status==='allowed'?'selected':''}>✓ Разрешить</option>
+            <option value="monitored" ${data.status==='monitored'?'selected':''}>👁 Мониторинг</option>
+            <option value="blocked" ${data.status==='blocked'?'selected':''}>✕ Заблокировать</option>
+          </select>
+        </form>
+      </td>
+      <td>
+        <button class="btn btn-sm btn-outline-danger btn-delete-policy p-1 lh-1"
+                data-id="${data.id}" data-cmd="${escHtml(data.command)}" title="Удалить команду">
+          <i class="bi bi-trash3 small"></i>
+        </button>
+      </td>`;
+    tbody.appendChild(tr);
+
+    // Add to datalist
+    const opt = document.createElement('option');
+    opt.value = data.command;
+    document.getElementById('cmdSuggestions').appendChild(opt);
+
+    // Flash
+    tr.style.transition = 'background 0.8s';
+    tr.style.background = '#d1edff';
+    setTimeout(()=>{ tr.style.background=''; }, 1200);
+
+    const visEl = document.getElementById('visibleCount');
+    visEl.textContent = parseInt(visEl.textContent)+1;
+}
+
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function updateCounters(status, delta){
+    const map = {blocked:'cnt-blocked', allowed:'cnt-allowed', monitored:'cnt-monitored'};
+    const el = document.getElementById(map[status]);
+    if (el) el.textContent = parseInt(el.textContent) + delta;
+}
+
+// ─── DELETE COMMAND ──────────────────────────────────────────────────────────
+const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+let deletePendingId = null;
+
+document.addEventListener('click', function(e){
+    const btn = e.target.closest('.btn-delete-policy');
+    if (!btn) return;
+    deletePendingId = btn.dataset.id;
+    document.getElementById('deleteModalCmd').textContent = btn.dataset.cmd;
+    deleteModal.show();
+});
+
+document.getElementById('btnDeleteConfirm').addEventListener('click', async function(){
+    if (!deletePendingId) return;
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+
+    try {
+        const r = await fetch(`/policies/delete/${deletePendingId}/`, {method:'POST', body:fd});
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+
+        const row = document.querySelector(`.policy-row[data-id="${deletePendingId}"]`);
+        if (row) {
+            // Find status to update counter
+            const sel = row.querySelector('select[name="new_status"]');
+            const st = sel ? sel.value : 'monitored';
+            updateCounters(st, -1);
+            row.style.transition = 'opacity 0.3s, background 0.3s';
+            row.style.opacity = '0';
+            row.style.background = '#ffd6d6';
+            setTimeout(()=>{
+                row.remove();
+                renumberRows();
+                const visEl = document.getElementById('visibleCount');
+                visEl.textContent = parseInt(visEl.textContent)-1;
+            }, 320);
+        }
+        deleteModal.hide();
+    } catch(e) {
+        alert('Ошибка удаления: ' + e.message);
+    }
+    this.disabled = false;
+    this.innerHTML = 'Удалить';
+    deletePendingId = null;
+});
+
+function renumberRows(){
+    document.querySelectorAll('#policiesTbody .policy-row').forEach((r,i)=>{
+        const n = r.querySelector('.row-num');
+        if (n) n.textContent = i+1;
+    });
+}
+</script>
 {% endblock %}

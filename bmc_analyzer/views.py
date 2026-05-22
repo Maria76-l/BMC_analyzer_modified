@@ -222,46 +222,6 @@ def dismiss_all_alerts(request):
 
 @login_required
 def policies_view(request):
-    policies = CommandPolicy.objects.all()
-    simulate_result = None
-
-    if request.method == 'POST' and 'simulate' in request.POST:
-        cmd_name = request.POST.get('command_name', '').strip()
-        src_ip = request.POST.get('src_ip', '').strip() or get_client_ip(request)
-        if cmd_name:
-            status, policy = check_command_policy(cmd_name)
-            username = request.user.username
-
-            if status == 'blocked':
-                event_type = 'cmd_blocked'
-                log_event(event_type, username=username, ip_address=src_ip,
-                          command=cmd_name,
-                          details={'result': 'blocked', 'policy': policy.description if policy else ''})
-                create_alert('warning',
-                             f'Попытка заблокированной команды: {cmd_name}',
-                             f'Пользователь {username} ({src_ip}) попытался выполнить заблокированную команду «{cmd_name}».')
-            elif status == 'allowed':
-                event_type = 'cmd_allowed'
-                log_event(event_type, username=username, ip_address=src_ip,
-                          command=cmd_name, details={'result': 'allowed'})
-            elif status == 'monitored':
-                event_type = 'cmd_monitored'
-                log_event(event_type, username=username, ip_address=src_ip,
-                          command=cmd_name, details={'result': 'monitored'})
-            else:
-                event_type = 'cmd_monitored'
-                log_event(event_type, username=username, ip_address=src_ip,
-                          command=cmd_name, details={'result': 'unknown_command'})
-
-            criticality = policy.criticality if policy else None
-            simulate_result = {
-                'command': cmd_name,
-                'status': status,
-                'src_ip': src_ip,
-                'policy': policy,
-                'criticality': criticality,
-            }
-
     if request.method == 'POST' and 'update_status' in request.POST:
         policy_id = request.POST.get('policy_id')
         new_status = request.POST.get('new_status')
@@ -277,15 +237,154 @@ def policies_view(request):
             messages.success(request, f'Статус команды «{policy.command}» изменён на «{policy.get_status_display()}».')
         return redirect('policies')
 
+    policies = CommandPolicy.objects.all().order_by('command')
     ctx = {
         **_base_ctx(request),
         'policies': policies,
-        'simulate_result': simulate_result,
+        'commands_json': list(policies.values_list('command', flat=True)),
         'blocked_count': policies.filter(status='blocked').count(),
         'allowed_count': policies.filter(status='allowed').count(),
         'monitored_count': policies.filter(status='monitored').count(),
     }
     return render(request, 'bmc_analyzer/policies.html', ctx)
+
+
+@login_required
+def simulate_command_api(request):
+    """AJAX endpoint: simulate a BMC command and return JSON result."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    import re, socket
+    cmd_name = request.POST.get('command', '').strip()
+    src_ip_raw = request.POST.get('src_ip', '').strip()
+
+    if not cmd_name:
+        return JsonResponse({'error': 'Команда не указана'}, status=400)
+
+    # Validate / normalise source IP
+    def _valid_ip(s):
+        try:
+            socket.inet_pton(socket.AF_INET, s)
+            return True
+        except OSError:
+            try:
+                socket.inet_pton(socket.AF_INET6, s)
+                return True
+            except OSError:
+                return False
+
+    src_ip = src_ip_raw if _valid_ip(src_ip_raw) else get_client_ip(request)
+
+    status, policy = check_command_policy(cmd_name)
+    username = request.user.username
+
+    event_map = {
+        'blocked': 'cmd_blocked',
+        'allowed': 'cmd_allowed',
+        'monitored': 'cmd_monitored',
+        'unknown': 'cmd_monitored',
+    }
+    event_type = event_map.get(status, 'cmd_monitored')
+
+    details = {
+        'result': status,
+        'src_ip': src_ip,
+        'protocol': 'IPMI/RMCP+',
+    }
+    if policy:
+        details['criticality'] = str(policy.criticality)
+        details['description'] = policy.description
+
+    log_event(event_type, username=username, ip_address=src_ip,
+              command=cmd_name, details=details)
+
+    if status == 'blocked':
+        create_alert(
+            'warning',
+            f'Попытка заблокированной команды: {cmd_name}',
+            f'Пользователь {username} ({src_ip}) попытался выполнить заблокированную команду «{cmd_name}».',
+        )
+
+    return JsonResponse({
+        'status': status,
+        'command': cmd_name,
+        'src_ip': src_ip,
+        'username': username,
+        'criticality': policy.criticality if policy else None,
+        'description': policy.description if policy else '',
+        'event_logged': True,
+        'alert_created': status == 'blocked',
+    })
+
+
+@login_required
+def add_policy(request):
+    """AJAX endpoint: create a new CommandPolicy."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    command = request.POST.get('command', '').strip()
+    if not command:
+        return JsonResponse({'error': 'Имя команды обязательно'}, status=400)
+    if CommandPolicy.objects.filter(command__iexact=command).exists():
+        return JsonResponse({'error': f'Команда «{command}» уже существует в политиках'}, status=400)
+
+    try:
+        criticality = float(request.POST.get('criticality', '0.5'))
+        criticality = max(0.0, min(1.0, criticality))
+    except ValueError:
+        criticality = 0.5
+
+    try:
+        frequency = int(request.POST.get('frequency', '1'))
+        frequency = max(1, frequency)
+    except ValueError:
+        frequency = 1
+
+    status_val = request.POST.get('status', 'monitored')
+    if status_val not in ('allowed', 'blocked', 'monitored'):
+        status_val = 'monitored'
+
+    description = request.POST.get('description', '').strip()
+
+    policy = CommandPolicy.objects.create(
+        command=command,
+        criticality=criticality,
+        frequency=frequency,
+        status=status_val,
+        description=description,
+    )
+    log_event('policy_change', username=request.user.username,
+              ip_address=get_client_ip(request),
+              command=command,
+              details={'action': 'created', 'status': status_val,
+                       'criticality': criticality, 'frequency': frequency})
+
+    return JsonResponse({
+        'ok': True,
+        'id': policy.id,
+        'command': policy.command,
+        'status': policy.status,
+        'criticality': policy.criticality,
+        'frequency': policy.frequency,
+        'description': policy.description,
+    })
+
+
+@login_required
+def delete_policy(request, policy_id):
+    """AJAX endpoint: delete a CommandPolicy."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    policy = get_object_or_404(CommandPolicy, pk=policy_id)
+    command_name = policy.command
+    policy.delete()
+    log_event('policy_change', username=request.user.username,
+              ip_address=get_client_ip(request),
+              command=command_name,
+              details={'action': 'deleted'})
+    return JsonResponse({'ok': True, 'command': command_name})
 
 
 # ─── Security status API ──────────────────────────────────────────────────────
