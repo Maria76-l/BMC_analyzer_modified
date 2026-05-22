@@ -255,26 +255,13 @@ def simulate_command_api(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=405)
 
-    import re, socket
+    import socket
     cmd_name = request.POST.get('command', '').strip()
-    src_ip_raw = request.POST.get('src_ip', '').strip()
 
     if not cmd_name:
         return JsonResponse({'error': 'Команда не указана'}, status=400)
 
-    # Validate / normalise source IP
-    def _valid_ip(s):
-        try:
-            socket.inet_pton(socket.AF_INET, s)
-            return True
-        except OSError:
-            try:
-                socket.inet_pton(socket.AF_INET6, s)
-                return True
-            except OSError:
-                return False
-
-    src_ip = src_ip_raw if _valid_ip(src_ip_raw) else get_client_ip(request)
+    src_ip = get_client_ip(request)
 
     status, policy = check_command_policy(cmd_name)
     username = request.user.username

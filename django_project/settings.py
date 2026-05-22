@@ -22,14 +22,18 @@ if REPLIT_DEV_DOMAIN:
 
 CSRF_TRUSTED_ORIGINS = _trusted + [
     'https://*.replit.dev',
+    'https://*.replit.dev:5000',
     'https://*.repl.co',
     'https://*.sisko.replit.dev',
+    'https://*.sisko.replit.dev:5000',
     'https://*.kirk.replit.dev',
+    'https://*.kirk.replit.dev:5000',
     'https://*.spock.replit.dev',
+    'https://*.spock.replit.dev:5000',
 ]
 
 CSRF_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
