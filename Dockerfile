@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 LABEL maintainer="company2-dev@example.com"
 LABEL version="2.0.0"
-LABEL description="BMC_analyzer — переход HTTP→HTTPS (MR-2026-001, ГОСТ 12207)"
+LABEL description="BMC_analyzer"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
