@@ -3,6 +3,18 @@
 {% block nav_analysis %}active{% endblock %}
 
 {% block content %}
+<style>
+    /* Тёмный цвет для текста вкладок (активных и неактивных) */
+    .nav-tabs .nav-link {
+        color: #212529 !important;  /* тёмно-серый/чёрный */
+    }
+    .nav-tabs .nav-link.active {
+        color: #212529 !important;
+        font-weight: 600;
+        border-bottom-color: #0d6efd; /* синяя полоска для активной вкладки */
+    }
+</style>
+
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h4 class="mb-0"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Анализ команд удалённого управления BMC</h4>
     <a href="{% url 'policies' %}" class="btn btn-sm btn-outline-primary">
@@ -67,8 +79,12 @@
                     <table class="table table-bordered table-hover align-middle mb-0">
                         <thead class="table-light text-center">
                             <tr>
-                                <th>№</th><th>Команда</th><th>Частота (F)</th>
-                                <th>Критичность (C)</th><th>Индекс угрозы (R)</th><th>Статус</th>
+                                <th>№</th>
+                                <th>Команда</th>
+                                <th>Частота (F)</th>
+                                <th>Критичность (C)</th>
+                                <th>Индекс угрозы (R)</th>
+                                <th>Статус</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -136,8 +152,12 @@
                     <table class="table table-bordered table-hover align-middle mb-0">
                         <thead class="table-light text-center">
                             <tr>
-                                <th>№</th><th>Команда</th><th>Частота (F)</th>
-                                <th>Критичность (усил.)</th><th>Индекс угрозы (усил.)</th><th>Статус</th>
+                                <th>№</th>
+                                <th>Команда</th>
+                                <th>Частота (F)</th>
+                                <th>Критичность (усил.)</th>
+                                <th>Индекс угрозы (усил.)</th>
+                                <th>Статус</th>
                             </tr>
                         </thead>
                         <tbody>
