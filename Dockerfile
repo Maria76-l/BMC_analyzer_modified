@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 LABEL maintainer="company2-dev@example.com"
 LABEL version="2.0.0"
@@ -23,9 +23,9 @@ COPY . .
 
 RUN python manage.py collectstatic --noinput 2>/dev/null || true
 
-EXPOSE 3000
+EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:3000/login/ || exit 1
 
-CMD ["gunicorn", "django_project.wsgi:application", "--bind", "0.0.0.0:3000", "--workers", "2", "--timeout", "120"]
+CMD ["gunicorn", "django_project.wsgi:application", "--bind", "0.0.0.0:35000", "--workers", "2", "--timeout", "120"]
